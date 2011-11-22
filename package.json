@@ -1,0 +1,36 @@
+{
+  "name": "threads_a_gogo",
+  "version": "0.1.0",
+  "main": "build/release/threads_a_gogo.node",
+  "description": "██████ Simple and fast JavaScript threads for Node.js ██████",
+  "keywords": [
+    "The",
+    "most",
+    "awesome",
+    "project",
+    "ever",
+    "a gogo"
+  ],
+  "author": {
+    "name":   "Jorge Chamorro Bieling",
+    "email":  "jorge@jorgechamorro.com",
+    "twitter": "jorgechamorro"
+  },
+  "homepage": "https://github.com/xk/node-threads-a-gogo",
+  "bugs": {
+    "url":    "http://github.com/xk/node-threads-a-gogo/issues",
+    "email":  "jorge@jorgechamorro.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/xk/node-threads-a-gogo.git"
+  },
+  "scripts": {
+    "install": "node-waf configure install"
+  },
+  "os": ["macos", "linux"],
+  "engines": {
+    "node": ">=0.5.1"
+  }
+}

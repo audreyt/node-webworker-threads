@@ -138,7 +138,7 @@ static typeThread* isAThread (Handle<Object> receiver) {
 
 
 
-static void pushToThreadQueue (typeQueueItem* qitem, typeThread* thread) {
+static void pushToInQueue (typeQueueItem* qitem, typeThread* thread) {
   pthread_mutex_lock(&thread->IDLE_mutex);
   queue_push(qitem, &thread->inQueue);
   if (thread->IDLE) {
@@ -452,6 +452,7 @@ static void Callback (EV_P_ ev_async *watcher, int revents) {
       }
       
       free(job->typeEvent.argumentos);
+      queue_push(qitem, freeJobsQueue);
       thread->dispatchEvents->CallAsFunction(thread->JSObject, 2, args);
     }
   }
@@ -516,7 +517,7 @@ static Handle<Value> Eval (const Arguments &args) {
   job->typeEval.useStringObject= 1;
   job->jobType= kJobTypeEval;
   
-  pushToThreadQueue(qitem, thread);
+  pushToInQueue(qitem, thread);
   return scope.Close(args.This());
 }
 
@@ -577,7 +578,7 @@ static Handle<Value> Load (const Arguments &args) {
   job->typeEval.useStringObject= 0;
   job->jobType= kJobTypeEval;
 
-  pushToThreadQueue(qitem, thread);
+  pushToInQueue(qitem, thread);
 
   return scope.Close(args.This());
 }
@@ -612,7 +613,7 @@ static Handle<Value> processEmit (const Arguments &args) {
     job->typeEvent.argumentos[i-1]= new String::Utf8Value(args[i]);
   } while (++i <= job->typeEvent.length);
   
-  pushToThreadQueue(qitem, thread);
+  pushToInQueue(qitem, thread);
   
   return scope.Close(args.This());
 }

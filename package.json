@@ -1,6 +1,6 @@
 {
   "name": "threads_a_gogo",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "build/release/threads_a_gogo.node",
   "description": "██████ Simple and fast JavaScript threads for Node.js ██████",
   "keywords": [

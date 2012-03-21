@@ -106,7 +106,6 @@ cat ../../../src/thread_nextTick.js | ./minify kThread_nextTick_js > ../../../sr
 
 static typeQueueItem* nuJobQueueItem (void) {
   typeQueueItem* qitem= queue_pull(freeJobsQueue);
-  //freeJobsQueue && freeJobsQueue->first && (qitem= queue_pull(freeJobsQueue));
   if (!qitem) {
     qitem= nuItem(kItemTypePointer, calloc(1, sizeof(typeJob)));
   }
@@ -305,6 +304,7 @@ static void eventLoop (typeThread* thread) {
             }
             
             free(job->typeEvent.argumentos);
+            queue_push(qitem, freeJobsQueue);
             dispatchEvents->CallAsFunction(global, 2, args);
           }
         }
@@ -412,15 +412,6 @@ static void Callback (EV_P_ ev_async *watcher, int revents) {
       }
 
       queue_push(qitem, freeJobsQueue);
-      /*
-      if (freeJobsQueue) {
-        queue_push(qitem, freeJobsQueue);
-      }
-      else {
-        free(job);
-        destroyItem(qitem);
-      }
-      */
       
       if (onError.HasCaught()) {
         if (thread->outQueue.first) {
@@ -667,7 +658,7 @@ static Handle<Value> Create (const Arguments &args) {
     
     typeThread* thread;
     typeQueueItem* qitem= NULL;
-    freeThreadsQueue && freeThreadsQueue->first && (qitem= queue_pull(freeThreadsQueue));
+    qitem= queue_pull(freeThreadsQueue);
     if (qitem) {
       thread= (typeThread*) qitem->asPtr;
       destroyItem(qitem);

@@ -80,8 +80,7 @@ static typeQueueItem* queue_pull (typeQueue* queue) {
 
 static typeQueueItem* nuItem (int itemType, void* item) {
   
-  typeQueueItem* qitem= NULL;
-  if (freeItemsQueue && freeItemsQueue->first) qitem= queue_pull(freeItemsQueue);
+  typeQueueItem* qitem= qitem= queue_pull(freeItemsQueue);
   if (!qitem) {
     qitem= (typeQueueItem*) calloc(1, sizeof(typeQueueItem));
   }
@@ -94,7 +93,7 @@ static typeQueueItem* nuItem (int itemType, void* item) {
   else if (itemType == kItemTypePointer) {
     qitem->asPtr= item;
   }
-    
+  
   return qitem;
 }
 

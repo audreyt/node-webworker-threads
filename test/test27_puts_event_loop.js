@@ -1,7 +1,7 @@
-var threads_a_gogo= require('threads_a_gogo');
-var pool= threads_a_gogo.createPool(2);
+var i= parseInt(process.argv[2], 10) || 2;
+var pool= require('threads_a_gogo').createPool(i);
+console.log("Using "+ i+ " threads.");
 
-var i= 0;
 pool.on('again', function onAgain () {
   this.eval('ƒ()');
 });
@@ -11,4 +11,4 @@ function ƒ () {
   thread.emit('again', 0);
 }
 
-pool.all.eval(ƒ).all.eval('i=0').all.eval('ƒ()').all.eval('ƒ()').all.eval('ƒ()');
+pool.all.eval(ƒ).all.eval('i=0').all.eval('ƒ()');

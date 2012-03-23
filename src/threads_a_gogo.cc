@@ -216,10 +216,8 @@ static void eventLoop (typeThread* thread) {
   thread->context->Enter();
   
   {
-    HandleScope scope;
+    HandleScope scope1;
     
-    Local<Script> script;
-    Local<Value> _ntq= String::NewSymbol("_ntq");
     Local<Object> global= thread->context->Global();
     global->Set(String::NewSymbol("puts"), FunctionTemplate::New(Puts)->GetFunction());
     Local<Object> threadObject= Object::New();
@@ -229,60 +227,64 @@ static void eventLoop (typeThread* thread) {
     threadObject->Set(String::NewSymbol("emit"), FunctionTemplate::New(threadEmit)->GetFunction());
     Local<Object> dispatchEvents= Script::Compile(String::New(kEvents_js))->Run()->ToObject()->CallAsFunction(threadObject, 0, NULL)->ToObject();
     Local<Object> dispatchNextTicks= Script::Compile(String::New(kThread_nextTick_js))->Run()->ToObject();
+    Local<Array> _ntq= (v8::Array*) *threadObject->Get(String::NewSymbol("_ntq"));
     
     double nextTickQueueLength= 0;
+    long int ctr= 0;
     
     //SetFatalErrorHandler(FatalErrorCB);
     
     while (!thread->sigkill) {
       typeJob* job;
       typeQueueItem* qitem;
-      String::Utf8Value* str;
       
       {
-        HandleScope scope;
+        HandleScope scope2;
         TryCatch onError;
+        String::Utf8Value* str;
+        Local<String> source;
+        Local<Script> script;
         Local<Value> resultado;
         
-        while ((qitem= queue_pull(&thread->inQueue))) {
         
+        while ((qitem= queue_pull(&thread->inQueue))) {
+          
           job= (typeJob*) qitem->asPtr;
+          
+          if ((++ctr) > 2e3) {
+            ctr= 0;
+            V8::IdleNotification();
+          }
           
           if (job->jobType == kJobTypeEval) {
             //Ejecutar un texto
-            job->typeEval.error= 0;
-            Local<Script> script;
             
             if (job->typeEval.useStringObject) {
               str= job->typeEval.scriptText_StringObject;
-              script= Script::Compile(String::New(**str, (*str).length()));
+              source= String::New(**str, (*str).length());
               delete str;
-              job->typeEval.scriptText_StringObject= NULL;
             }
             else {
-              script= Script::Compile(String::New(job->typeEval.scriptText_CharPtr));
+              source= String::New(job->typeEval.scriptText_CharPtr);
               free(job->typeEval.scriptText_CharPtr);
-              job->typeEval.scriptText_CharPtr= NULL;
             }
-
-            if (!onError.HasCaught()) {
-              resultado= script->Run();
-            }
+            
+            script= Script::New(source);
+            
+            if (!onError.HasCaught()) resultado= script->Run();
 
             if (job->typeEval.tiene_callBack) {
               job->typeEval.error= onError.HasCaught() ? 1 : 0;
               job->typeEval.resultado= new String::Utf8Value(job->typeEval.error ? onError.Exception() : resultado);
-
               queue_push(qitem, &thread->outQueue);
-              if (!ev_async_pending(&thread->async_watcher)) ev_async_send(EV_DEFAULT_UC_ &thread->async_watcher); // wake up callback
+              // wake up callback
+              if (!ev_async_pending(&thread->async_watcher)) ev_async_send(EV_DEFAULT_UC_ &thread->async_watcher);
             }
             else {
               queue_push(qitem, freeJobsQueue);
             }
 
-            if (onError.HasCaught()) {
-              onError.Reset();
-            }
+            if (onError.HasCaught()) onError.Reset();
           }
           else if (job->jobType == kJobTypeEvent) {
             //Emitir evento.
@@ -309,10 +311,14 @@ static void eventLoop (typeThread* thread) {
           }
         }
         
-        
-        if (((v8::Array*) *threadObject->Get(_ntq))->Length()) {
+        if (_ntq->Length()) {
+          
+          if ((++ctr) > 2e3) {
+            ctr= 0;
+            V8::IdleNotification();
+          }
+          
           resultado= dispatchNextTicks->CallAsFunction(global, 0, NULL);
-
           if (onError.HasCaught()) {
             nextTickQueueLength= 1;
             onError.Reset();
@@ -321,7 +327,6 @@ static void eventLoop (typeThread* thread) {
             nextTickQueueLength= resultado->NumberValue();
           }
         }
-
       }
       
       if (nextTickQueueLength || thread->inQueue.length) continue;

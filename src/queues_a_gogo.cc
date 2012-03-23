@@ -80,7 +80,7 @@ static typeQueueItem* queue_pull (typeQueue* queue) {
 
 static typeQueueItem* nuItem (int itemType, void* item) {
   
-  typeQueueItem* qitem= qitem= queue_pull(freeItemsQueue);
+  typeQueueItem* qitem= queue_pull(freeItemsQueue);
   if (!qitem) {
     qitem= (typeQueueItem*) calloc(1, sizeof(typeQueueItem));
   }

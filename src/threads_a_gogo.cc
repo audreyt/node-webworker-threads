@@ -44,12 +44,23 @@ typedef struct {
   
   Isolate* isolate;
   Persistent<Context> context;
-  Persistent<Object> JSObject;
-  Persistent<Object> threadJSObject;
-  Persistent<Object> dispatchEvents;
+  Persistent<Object> parentJSObject;
+  Persistent<Object> parentDispatchEvents;
   
   unsigned long threadMagicCookie;
 } typeThread;
+
+typedef struct Weak {
+  typeThread* thread;
+  int isWeak;
+  struct Weak* next;
+} typeWeak;
+
+typedef struct SharedStr {
+  char* data;
+  ssize_t len;
+  typeWeak* weak;
+} typeSharedStr;
 
 enum jobTypes {
   kJobTypeEval,
@@ -78,6 +89,8 @@ typedef struct {
   };
 } typeJob;
 
+
+
 /*
 
 cd deps/minifier/src
@@ -98,6 +111,22 @@ cat ../../../src/thread_nextTick.js | ./minify kThread_nextTick_js > ../../../sr
 //node-waf configure uninstall distclean configure build install
 
 
+static typeQueueItem* nuJobQueueItem (void);
+static typeThread* isAThread (Handle<Object> receiver);
+static void pushToInQueue (typeQueueItem* qitem, typeThread* thread);
+static Handle<Value> Puts (const Arguments &args);
+static void* aThread (void* arg);
+static void eventLoop (typeThread* thread);
+static void destroyaThread (typeThread* thread);
+static void Callback (EV_P_ ev_async *watcher, int revents);
+static Handle<Value> Destroy (const Arguments &args);
+static Handle<Value> Eval (const Arguments &args);
+static char* readFile (Handle<String> path);
+static Handle<Value> Load (const Arguments &args);
+static Handle<Value> processEmit (const Arguments &args);
+static Handle<Value> threadEmit (const Arguments &args);
+static Handle<Value> Create (const Arguments &args);
+void Init (Handle<Object> target);
 
 
 
@@ -171,7 +200,6 @@ static Handle<Value> Puts (const Arguments &args) {
 
 
 
-static void eventLoop (typeThread* thread);
 
 // A background thread
 static void* aThread (void* arg) {
@@ -181,6 +209,8 @@ static void* aThread (void* arg) {
   pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &dummy);
   
   typeThread* thread= (typeThread*) arg;
+  
+  V8::SetFlagsFromString("--expose_gc", 11);
   thread->isolate= Isolate::New();
   thread->isolate->SetData(thread);
   
@@ -208,7 +238,6 @@ static void* aThread (void* arg) {
 
 
 
-static Handle<Value> threadEmit (const Arguments &args);
 
 static void eventLoop (typeThread* thread) {
   thread->isolate->Enter();
@@ -220,14 +249,14 @@ static void eventLoop (typeThread* thread) {
     
     Local<Object> global= thread->context->Global();
     global->Set(String::NewSymbol("puts"), FunctionTemplate::New(Puts)->GetFunction());
-    Local<Object> threadObject= Object::New();
-    global->Set(String::NewSymbol("thread"), threadObject);
+    Local<Object> childJSObject= Object::New();
+    global->Set(String::NewSymbol("thread"), childJSObject);
     
-    threadObject->Set(String::NewSymbol("id"), Number::New(thread->id));
-    threadObject->Set(String::NewSymbol("emit"), FunctionTemplate::New(threadEmit)->GetFunction());
-    Local<Object> dispatchEvents= Script::Compile(String::New(kEvents_js))->Run()->ToObject()->CallAsFunction(threadObject, 0, NULL)->ToObject();
+    childJSObject->Set(String::NewSymbol("id"), Number::New(thread->id));
+    childJSObject->Set(String::NewSymbol("emit"), FunctionTemplate::New(threadEmit)->GetFunction());
+    Local<Object> childDispatchEvents= Script::Compile(String::New(kEvents_js))->Run()->ToObject()->CallAsFunction(childJSObject, 0, NULL)->ToObject();
     Local<Object> dispatchNextTicks= Script::Compile(String::New(kThread_nextTick_js))->Run()->ToObject();
-    Local<Array> _ntq= (v8::Array*) *threadObject->Get(String::NewSymbol("_ntq"));
+    Local<Array> _ntq= (v8::Array*) *childJSObject->Get(String::NewSymbol("_ntq"));
     
     double nextTickQueueLength= 0;
     long int ctr= 0;
@@ -307,7 +336,7 @@ static void eventLoop (typeThread* thread) {
             
             free(job->typeEvent.argumentos);
             queue_push(qitem, freeJobsQueue);
-            dispatchEvents->CallAsFunction(global, 2, args);
+            childDispatchEvents->CallAsFunction(global, 2, args);
           }
         }
         
@@ -353,11 +382,11 @@ static void eventLoop (typeThread* thread) {
 static void destroyaThread (typeThread* thread) {
   
   thread->sigkill= 0;
-  //TODO: hay que vaciar las colas y destruir los trabajos antes de ponerlas a NULL
-  thread->inQueue.first= thread->inQueue.last= NULL;
-  thread->outQueue.first= thread->outQueue.last= NULL;
-  thread->JSObject->SetPointerInInternalField(0, NULL);
-  thread->JSObject.Dispose();
+  //TODO: hay que vaciar las colas y destruir los trabajos antes de resetearlas
+  resetQueue(&thread->inQueue);
+  resetQueue(&thread->outQueue);
+  thread->parentJSObject->SetPointerInInternalField(0, NULL);
+  thread->parentJSObject.Dispose();
   
   ev_async_stop(EV_DEFAULT_UC_ &thread->async_watcher);
   ev_unref(EV_DEFAULT_UC);
@@ -408,7 +437,7 @@ static void Callback (EV_P_ ev_async *watcher, int revents) {
           argv[0]= null;
           argv[1]= String::New(**str, (*str).length());
         }
-        job->cb->CallAsFunction(thread->JSObject, 2, argv);
+        job->cb->CallAsFunction(thread->parentJSObject, 2, argv);
         job->cb.Dispose();
         job->typeEval.tiene_callBack= 0;
 
@@ -449,7 +478,7 @@ static void Callback (EV_P_ ev_async *watcher, int revents) {
       
       free(job->typeEvent.argumentos);
       queue_push(qitem, freeJobsQueue);
-      thread->dispatchEvents->CallAsFunction(thread->JSObject, 2, args);
+      thread->parentDispatchEvents->CallAsFunction(thread->parentJSObject, 2, args);
     }
   }
 }
@@ -601,6 +630,20 @@ static Handle<Value> processEmit (const Arguments &args) {
   
   job->jobType= kJobTypeEvent;
   job->typeEvent.length= args.Length()- 1;
+  
+  
+  /*
+  int isExternal= String::Cast(*args[0])->IsExternal();
+  printf("BEFORE: isExternal() -> %d\n", isExternal);
+  String::ExternalStringResource* externalStrRsrc;
+  if (!isExternal && String::Cast(*args[0])->CanMakeExternal()) {
+    printf("eventName->MakeExternal(externalStrRsrc)\n");
+    isExternal= String::Cast(*args[0])->MakeExternal(externalStrRsrc);
+  }
+  printf("AFTER: .isExternal() -> %d, .length() -> %d\n", isExternal, externalStrRsrc == NULL);
+  */
+  
+  
   job->typeEvent.eventName= new String::Utf8Value(args[0]);
   job->typeEvent.argumentos= (v8::String::Utf8Value**) malloc(job->typeEvent.length* sizeof(void*));
   
@@ -655,8 +698,6 @@ static Handle<Value> threadEmit (const Arguments &args) {
 
 
 
-
-
 // Creates and launches a new isolate in a new background thread.
 static Handle<Value> Create (const Arguments &args) {
     HandleScope scope;
@@ -676,11 +717,11 @@ static Handle<Value> Create (const Arguments &args) {
     static long int threadsCtr= 0;
     thread->id= threadsCtr++;
     
-    thread->JSObject= Persistent<Object>::New(threadTemplate->NewInstance());
-    thread->JSObject->Set(id_symbol, Integer::New(thread->id));
-    thread->JSObject->SetPointerInInternalField(0, thread);
-    Local<Value> dispatchEvents= Script::Compile(String::New(kEvents_js))->Run()->ToObject()->CallAsFunction(thread->JSObject, 0, NULL);
-    thread->dispatchEvents= Persistent<Object>::New(dispatchEvents->ToObject());
+    thread->parentJSObject= Persistent<Object>::New(threadTemplate->NewInstance());
+    thread->parentJSObject->Set(id_symbol, Integer::New(thread->id));
+    thread->parentJSObject->SetPointerInInternalField(0, thread);
+    Local<Value> parentDispatchEvents= Script::Compile(String::New(kEvents_js))->Run()->ToObject()->CallAsFunction(thread->parentJSObject, 0, NULL);
+    thread->parentDispatchEvents= Persistent<Object>::New(parentDispatchEvents->ToObject());
     
     ev_async_init(&thread->async_watcher, Callback);
     ev_async_start(EV_DEFAULT_UC_ &thread->async_watcher);
@@ -702,8 +743,11 @@ static Handle<Value> Create (const Arguments &args) {
     }
     
     V8::AdjustAmountOfExternalAllocatedMemory(sizeof(typeThread));  //OJO V8 con V mayúscula.
-    return scope.Close(thread->JSObject);
+    return scope.Close(thread->parentJSObject);
 }
+
+
+
 
 
 void Init (Handle<Object> target) {
@@ -731,6 +775,7 @@ void Init (Handle<Object> target) {
   threadTemplate->Set(String::NewSymbol("destroy"), FunctionTemplate::New(Destroy));
   
 }
+
 
 
 

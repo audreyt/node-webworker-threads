@@ -38,10 +38,10 @@ static typeQueue* freeItemsQueue= NULL;
 
 
 
-static void queue_push (typeQueueItem* qitem, typeQueue* queue);
-static typeQueueItem* queue_pull (typeQueue* queue);
-static typeQueueItem* nuItem (int itemType, void* item);
-static void destroyItem (typeQueueItem* qitem);
+static inline void queue_push (typeQueueItem* qitem, typeQueue* queue);
+static inline typeQueueItem* queue_pull (typeQueue* queue);
+static inline typeQueueItem* nuItem (int itemType, void* item);
+static inline void destroyItem (typeQueueItem* qitem);
 static typeQueue* nuQueue (long int id);
 static void resetQueue (typeQueue* queue);
 static void initQueues (void);
@@ -49,7 +49,7 @@ static void initQueues (void);
 
 
 
-static void queue_push (typeQueueItem* qitem, typeQueue* queue) {
+static inline void queue_push (typeQueueItem* qitem, typeQueue* queue) {
   qitem->next= NULL;
   
   pthread_mutex_lock(&queue->queueLock);
@@ -67,7 +67,7 @@ static void queue_push (typeQueueItem* qitem, typeQueue* queue) {
 
 
 
-static typeQueueItem* queue_pull (typeQueue* queue) {
+static inline typeQueueItem* queue_pull (typeQueue* queue) {
   typeQueueItem* qitem;
   
   pthread_mutex_lock(&queue->queueLock);
@@ -89,7 +89,7 @@ static typeQueueItem* queue_pull (typeQueue* queue) {
 
 
 
-static typeQueueItem* nuItem (int itemType, void* item) {
+static inline typeQueueItem* nuItem (int itemType, void* item) {
   
   typeQueueItem* qitem= queue_pull(freeItemsQueue);
   if (!qitem) {
@@ -111,7 +111,7 @@ static typeQueueItem* nuItem (int itemType, void* item) {
 
 
 
-static void destroyItem (typeQueueItem* qitem) {
+static inline void destroyItem (typeQueueItem* qitem) {
   
   if (freeItemsQueue) {
     queue_push(qitem, freeItemsQueue);

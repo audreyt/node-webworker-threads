@@ -111,9 +111,9 @@ cat ../../../src/thread_nextTick.js | ./minify kThread_nextTick_js > ../../../sr
 //node-waf configure uninstall distclean configure build install
 
 
-static inline typeQueueItem* nuJobQueueItem (void);
-static inline typeThread* isAThread (Handle<Object> receiver);
-static inline void pushToInQueue (typeQueueItem* qitem, typeThread* thread);
+static typeQueueItem* nuJobQueueItem (void);
+static typeThread* isAThread (Handle<Object> receiver);
+static void pushToInQueue (typeQueueItem* qitem, typeThread* thread);
 static Handle<Value> Puts (const Arguments &args);
 static void* aThread (void* arg);
 static void eventLoop (typeThread* thread);
@@ -133,7 +133,7 @@ void Init (Handle<Object> target);
 
 
 
-static inline typeQueueItem* nuJobQueueItem (void) {
+static typeQueueItem* nuJobQueueItem (void) {
   typeQueueItem* qitem= queue_pull(freeJobsQueue);
   if (!qitem) {
     qitem= nuItem(kItemTypePointer, calloc(1, sizeof(typeJob)));
@@ -146,7 +146,7 @@ static inline typeQueueItem* nuJobQueueItem (void) {
 
 
 
-static inline typeThread* isAThread (Handle<Object> receiver) {
+static typeThread* isAThread (Handle<Object> receiver) {
   typeThread* thread;
   
   if (receiver->IsObject()) {
@@ -166,7 +166,7 @@ static inline typeThread* isAThread (Handle<Object> receiver) {
 
 
 
-static inline void pushToInQueue (typeQueueItem* qitem, typeThread* thread) {
+static void pushToInQueue (typeQueueItem* qitem, typeThread* thread) {
   pthread_mutex_lock(&thread->IDLE_mutex);
   queue_push(qitem, &thread->inQueue);
   if (thread->IDLE) {

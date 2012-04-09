@@ -29,7 +29,7 @@
   "scripts": {
     "install": "node-waf configure install"
   },
-  "os": ["macos", "linux"],
+  "os": ["macos", "linux", "darwin"],
   "engines": {
     "node": ">=0.5.1"
   }

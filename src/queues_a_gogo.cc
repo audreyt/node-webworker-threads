@@ -38,17 +38,6 @@ static typeQueue* freeItemsQueue= NULL;
 
 
 
-static void queue_push (typeQueueItem* qitem, typeQueue* queue);
-static typeQueueItem* queue_pull (typeQueue* queue);
-static typeQueueItem* nuItem (int itemType, void* item);
-static void destroyItem (typeQueueItem* qitem);
-static typeQueue* nuQueue (long int id);
-static void resetQueue (typeQueue* queue);
-static void initQueues (void);
-
-
-
-
 static void queue_push (typeQueueItem* qitem, typeQueue* queue) {
   qitem->next= NULL;
   
@@ -79,7 +68,7 @@ static typeQueueItem* queue_pull (typeQueue* queue) {
       queue->first= qitem->next;
     }
     queue->length--;
-    //qitem->next= NULL;
+    qitem->next= NULL;
   }
   pthread_mutex_unlock(&queue->queueLock);
   
@@ -96,7 +85,7 @@ static typeQueueItem* nuItem (int itemType, void* item) {
     qitem= (typeQueueItem*) calloc(1, sizeof(typeQueueItem));
   }
   
-  //qitem->next= NULL;
+  qitem->next= NULL;
   qitem->itemType= itemType;
   if (itemType == kItemTypeNumber) {
     qitem->asNumber= *((double*) item);
@@ -145,17 +134,8 @@ static typeQueue* nuQueue (long int id) {
 }
 
 
-
-
-static void resetQueue (typeQueue* queue) {
-  queue->first= queue->last= NULL;
-  queue->length= 0;
-}
-
-
-
-
 /*
+
 static void destroyQueue (typeQueue* queue) {
   if (queuesPool) {
     queue_push(nuItem(kItemTypePointer, queue), queuesPool);
@@ -164,12 +144,15 @@ static void destroyQueue (typeQueue* queue) {
     free(queue);
   }
 }
+
 */
-
-
 
 
 static void initQueues (void) {
   freeItemsQueue= nuQueue(-2);  //MUST be created before queuesPool
   //queuesPool= nuQueue(-1);
 }
+
+
+
+

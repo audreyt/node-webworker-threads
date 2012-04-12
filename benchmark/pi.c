@@ -1,8 +1,8 @@
 /*
 
 To run this:
-$ gcc pi.c
-./a.out
+$ gcc pi.c -pthread -o pi
+./pi
 
 */
 
@@ -14,6 +14,8 @@ $ gcc pi.c
 #include <assert.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <sys/signal.h>
+#include <sys/wait.h>
 
 #define kPI 5e7
 

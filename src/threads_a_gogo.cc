@@ -1,8 +1,10 @@
 //2011-11 Proyectos Equis Ka, s.l., jorge@jorgechamorro.com
 //threads_a_gogo.cc
 
+
 #include <v8.h>
 #include <node.h>
+#include <uv.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
@@ -29,7 +31,7 @@ static typeQueue* freeThreadsQueue= NULL;
 
 #define kThreadMagicCookie 0x99c0ffee
 typedef struct {
-  ev_async async_watcher; //MUST be the first one
+  uv_async_t async_watcher; //MUST be the first one
   
   long int id;
   pthread_t thread;
@@ -167,6 +169,21 @@ static Handle<Value> Puts (const Arguments &args) {
   return Undefined();
 }
 
+static Handle<Value> Print (const Arguments &args) {
+	HandleScope scope;
+	int i= 0;
+	while (i < args.Length()) {
+		String::Utf8Value c_str(args[i]);
+		fputs(*c_str, stdout);
+		i++;
+	}
+	static char end = '\n';
+	fputs(&end, stdout);
+	fflush(stdout);
+	
+	//fprintf(stdout, "*** Puts END\n");
+	return Undefined();
+}
 
 
 
@@ -199,7 +216,7 @@ static void* aThread (void* arg) {
   thread->isolate->Dispose();
   
   // wake up callback
-  if (!ev_async_pending(&thread->async_watcher)) ev_async_send(EV_DEFAULT_UC_ &thread->async_watcher);
+  if (!(thread->inQueue.length)) uv_async_send(&thread->async_watcher);
   
   return NULL;
 }
@@ -220,6 +237,7 @@ static void eventLoop (typeThread* thread) {
     
     Local<Object> global= thread->context->Global();
     global->Set(String::NewSymbol("puts"), FunctionTemplate::New(Puts)->GetFunction());
+	  global->Set(String::NewSymbol("print"), FunctionTemplate::New(Print)->GetFunction());
     Local<Object> threadObject= Object::New();
     global->Set(String::NewSymbol("thread"), threadObject);
     
@@ -278,7 +296,7 @@ static void eventLoop (typeThread* thread) {
               job->typeEval.resultado= new String::Utf8Value(job->typeEval.error ? onError.Exception() : resultado);
               queue_push(qitem, &thread->outQueue);
               // wake up callback
-              if (!ev_async_pending(&thread->async_watcher)) ev_async_send(EV_DEFAULT_UC_ &thread->async_watcher);
+              if (!(thread->inQueue.length)) uv_async_send(&thread->async_watcher);
             }
             else {
               queue_push(qitem, freeJobsQueue);
@@ -359,8 +377,7 @@ static void destroyaThread (typeThread* thread) {
   thread->JSObject->SetPointerInInternalField(0, NULL);
   thread->JSObject.Dispose();
   
-  ev_async_stop(EV_DEFAULT_UC_ &thread->async_watcher);
-  ev_unref(EV_DEFAULT_UC);
+  uv_unref((uv_handle_t*)&thread->async_watcher);
   
   if (freeThreadsQueue) {
     queue_push(nuItem(kItemTypePointer, thread), freeThreadsQueue);
@@ -377,7 +394,7 @@ static void destroyaThread (typeThread* thread) {
 
 // C callback that runs in the main nodejs thread. This is the one responsible for
 // calling the thread's JS callback.
-static void Callback (EV_P_ ev_async *watcher, int revents) {
+static void Callback (uv_async_t *watcher, int revents) {
   typeThread* thread= (typeThread*) watcher;
   
   if (thread->sigkill) {
@@ -420,7 +437,7 @@ static void Callback (EV_P_ ev_async *watcher, int revents) {
       
       if (onError.HasCaught()) {
         if (thread->outQueue.first) {
-          ev_async_send(EV_DEFAULT_UC_ &thread->async_watcher); // wake up callback again
+          uv_async_send(&thread->async_watcher); // wake up callback again
         }
         node::FatalException(onError);
         return;
@@ -643,7 +660,7 @@ static Handle<Value> threadEmit (const Arguments &args) {
   } while (++i <= job->typeEvent.length);
   
   queue_push(qitem, &thread->outQueue);
-  if (!ev_async_pending(&thread->async_watcher)) ev_async_send(EV_DEFAULT_UC_ &thread->async_watcher); // wake up callback
+  if (!(thread->inQueue.length)) uv_async_send(&thread->async_watcher); // wake up callback
   
   //fprintf(stdout, "*** threadEmit END\n");
   
@@ -682,9 +699,8 @@ static Handle<Value> Create (const Arguments &args) {
     Local<Value> dispatchEvents= Script::Compile(String::New(kEvents_js))->Run()->ToObject()->CallAsFunction(thread->JSObject, 0, NULL);
     thread->dispatchEvents= Persistent<Object>::New(dispatchEvents->ToObject());
     
-    ev_async_init(&thread->async_watcher, Callback);
-    ev_async_start(EV_DEFAULT_UC_ &thread->async_watcher);
-    ev_ref(EV_DEFAULT_UC);
+    uv_async_init(uv_default_loop(), &thread->async_watcher, Callback);
+    uv_ref((uv_handle_t*)&thread->async_watcher);
     
     pthread_cond_init(&thread->IDLE_cv, NULL);
     pthread_mutex_init(&thread->IDLE_mutex, NULL);

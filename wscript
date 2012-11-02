@@ -38,7 +38,8 @@ def minify(ctxt):
 
 def configure(conf):
   print ""
-  print '******** THREADS_A_GOGO ********'
+  print '****** WebWorker Threads *******'
+  print '******* +THREADS_A_GOGO ********'
   print '**** Executing the configuration\n\n'
   conf.check_tool("gcc")
   conf.check_tool("compiler_cxx")
@@ -52,5 +53,5 @@ def build(bld):
   
   obj = bld.new_task_gen("cxx", "shlib", "node_addon")
   obj.cxxflags = ["-g", "-D_FILE_OFFSET_BITS=64", "-D_LARGEFILE_SOURCE", "-Wall", "-O0", "-Wunused-macros"]
-  obj.target = "threads_a_gogo"
-  obj.source = "src/threads_a_gogo.cc"
+  obj.target = "WebWorkerThreads"
+  obj.source = "src/WebWorkerThreads.cc"

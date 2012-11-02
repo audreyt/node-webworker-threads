@@ -1,5 +1,5 @@
 //2011-11 Proyectos Equis Ka, s.l., jorge@jorgechamorro.com
-//threads_a_gogo.cc
+//WebWorkerThreads.cc
 
 
 #include <v8.h>
@@ -751,7 +751,7 @@ void Init (Handle<Object> target) {
 
 
 
-NODE_MODULE(threads_a_gogo, Init)
+NODE_MODULE(WebWorkerThreads, Init)
 
 /*
 gcc -E -I /Users/jorge/JAVASCRIPT/binarios/include/node -o /o.c /Users/jorge/JAVASCRIPT/threads_a_gogo/src/threads_a_gogo.cc && mate /o.c

@@ -1,26 +1,26 @@
-# Threads A GoGo for Node.js
+# WebWorker Threads
 
-A native module for Node.js that provides an asynchronous, evented and/or continuation passing style API for moving blocking/longish CPU-bound tasks out of Node's event loop to JavaScript threads that run in parallel in the background and that use all the available CPU cores automatically; all from within a single Node process.
+This is based on @xk (jorgechamorro)'s [Threads A GoGo for Node.js](https://github.com/audreyt/node-threads-a-gogo), but with an API conforming to the [Web Worker standard](http://www.w3.org/TR/workers/).
+
+This module provides an asynchronous, evented and/or continuation passing style API for moving blocking/longish CPU-bound tasks out of Node's event loop to JavaScript threads that run in parallel in the background and that use all the available CPU cores automatically; all from within a single Node process.
+
+-----------
+WIP WIP WIP
+-----------
+Note that everything below this line is under construction, and doesn't work yet as advertised.
+-----------
 
 ## Installing the module
 
 With [npm](http://npmjs.org/):
 
-    npm install threads_a_gogo
-
-From source:
-
-    git clone http://github.com/xk/node-threads-a-gogo.git
-    cd node-threads-a-gogo
-    node-waf configure install
+    npm install webworker-threads
 
 To include the module in your project:
 
-    var threads_a_gogo= require('threads_a_gogo');
+    var Worker = require('webworker-threads');
 
-**You need a node with a v8 >= 3.2.4 to run this module. Any node >= 0.5.1 comes with a v8 >= 3.2.4.**
-
-The module **runs fine, though, in any node >= 0.2.0** as long as you build it with a v8 >= 3.2.4. To do that you simply have to replace /node/deps/v8 with a newer version of v8 and recompile it (node). To get any version of node goto http://nodejs.org/dist/, and for v8 goto http://github.com/v8/v8, click on "branch", select the proper tag (>= 3.2.4), and download the .zip.
+This module requires Node.js 0.6.0 or later.
 
 ## (not so) Quick Intro
 

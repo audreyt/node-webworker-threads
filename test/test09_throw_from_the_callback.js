@@ -1,6 +1,6 @@
 
 
-var Thread= require('threads_a_gogo');
+var Thread= require('webworker-threads');
 
 function cb (e,m) {
   console.log([e,m]);

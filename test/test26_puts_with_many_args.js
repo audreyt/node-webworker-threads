@@ -1,4 +1,4 @@
-var Threads= require('threads_a_gogo');
+var Threads= require('webworker-threads');
 
 function cb (err, msg) {
   if (err) {

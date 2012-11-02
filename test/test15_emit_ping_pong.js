@@ -1,4 +1,4 @@
-var t= require('threads_a_gogo');
+var t= require('webworker-threads');
 
 function eventHandler (data) {
   ctr++;

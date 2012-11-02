@@ -1,6 +1,6 @@
 
 
-var T= require('threads_a_gogo');
+var T= require('webworker-threads');
 
 
 var i= 0;

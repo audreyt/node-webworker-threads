@@ -1,6 +1,6 @@
 
 
-var Threads= require('threads_a_gogo');
+var Threads= require('webworker-threads');
 
 console.log('Launch with/without --expose_gc to compare memory usage')
 

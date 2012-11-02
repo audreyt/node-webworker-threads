@@ -1,6 +1,6 @@
 
 
-var t= require('threads_a_gogo');
+var t= require('webworker-threads');
 
 function eHandler (data) {
   console.log("TEST FAIL");

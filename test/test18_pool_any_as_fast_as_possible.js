@@ -1,6 +1,6 @@
 
 
-var T= require('threads_a_gogo');
+var T= require('webworker-threads');
 
 var i= Math.floor(process.argv[2]) || 1;
 console.log("Creating a pool of "+ i+ " threads");

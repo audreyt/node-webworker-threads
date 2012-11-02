@@ -16,8 +16,8 @@ function slow (req,res) {
 
 var numThreads= parseInt(process.argv[2], 10) || 5;
 console.log("Using "+ numThreads+ " threads.");
-var threads_a_gogo= require('threads_a_gogo');
-var threadPool= threads_a_gogo.createPool(numThreads).all.eval(fibo);
+var Worker= require('webworker-threads');
+var threadPool= Worker.createPool(numThreads).all.eval(fibo);
 
 function tagg (req,res) {
   threadPool.any.eval('fibo(40)', function (err, data) {

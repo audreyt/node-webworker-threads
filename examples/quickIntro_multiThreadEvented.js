@@ -1,5 +1,5 @@
 var numThreads= 10;
-var threadPool= require('threads_a_gogo').createPool(numThreads);
+var threadPool= require('webworker-threads').createPool(numThreads);
 threadPool.load(__dirname + '/quickIntro_evented_childThreadCode.js');
 
 /*

@@ -5,7 +5,7 @@
 /// thread to the main thread.
 /// 
 /// Like before, we create a thread and we define the fibonacci function:
-var Threads = require('threads_a_gogo');
+var Threads = require('webworker-threads');
 var t = Threads.create();
 
 function fibo(n) {
@@ -15,7 +15,7 @@ function fibo(n) {
 /// that computes all fibonacci numbers and emits a `data` event for every number it generates.
 /// 
 /// This function runs inside the worker thread so it does not see the `t` variable which belongs to the 
-/// main thread. But **threads_a_gogo** sets up a global `thread` variable that the worker thread can use to 
+/// main thread. But **webworker-threads** sets up a global `thread` variable that the worker thread can use to 
 /// send events to the main thread.
 /// 
 /// Here is our fibonacci generator:

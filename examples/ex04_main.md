@@ -14,7 +14,7 @@ In this file we keep only the ping (main) side:
 
 ``` javascript
 // Creating the worker thread
-var Threads = require('threads_a_gogo');
+var Threads = require('webworker-threads');
 var t = Threads.create();
 
 // Listening to 'data' events from the worker thread

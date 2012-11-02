@@ -1,4 +1,4 @@
-var thread= require('threads_a_gogo').create();
+var thread= require('webworker-threads').create();
 thread.load(__dirname + '/quickIntro_evented_childThreadCode.js');
 
 /*

@@ -23,7 +23,7 @@ var Equation = require("./ex06_complex").Equation;
 As usual, we create a thread
 
 ``` javascript
-var t = require('threads_a_gogo').create();
+var t = require('webworker-threads').create();
 ```
 
 We require the JASON serializer

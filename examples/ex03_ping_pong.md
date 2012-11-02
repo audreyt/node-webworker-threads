@@ -6,7 +6,7 @@ between main thread and worker thread.
 Like before, we create a worker thread and we define the fibonacci function:
 
 ``` javascript
-var Threads = require('threads_a_gogo');
+var Threads = require('webworker-threads');
 var t = Threads.create();
 
 function fibo(n) {
@@ -19,7 +19,7 @@ This is fine if the generator produces the number at a slower rate than the main
 but it will hog memory if the main thread is too busy and cannot consume the data events fast enough.  
 We can improve this by controlling the flow with events in both directions.
 
-The `thread` global variable that **threads_a_gogo** predefines in every worker thread is also an `EventEmitter`.  
+The `thread` global variable that **webworker-threads** predefines in every worker thread is also an `EventEmitter`.  
 So we will use it to send events in the other direction, from the main thread to the worker thread.
 
 Our modified generator does not use a loop any more. Instead, it generates numbers in response to `next` events

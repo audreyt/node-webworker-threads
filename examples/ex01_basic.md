@@ -14,7 +14,7 @@ function fibo(n) {
 Then, we create a worker thread with the `Threads.create` call:
 
 ``` javascript
-var Threads = require('threads_a_gogo');
+var Threads = require('webworker-threads');
 var t = Threads.create();
 ```
 

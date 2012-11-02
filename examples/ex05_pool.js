@@ -4,10 +4,10 @@
 /// Our previous examples used a single worker thread, and thus only one processor core.
 /// If we want to take full advantage of multi-core processors, we need the ability to delegate
 /// expensive computations to a pool of theads. This example demonstrates the pool thread that comes
-/// bundled with threads_a_gogo.
+/// bundled with Worker.
 /// 
 /// First, we create a pool
-var Threads = require('threads_a_gogo');
+var Threads = require('webworker-threads');
 var pool = Threads.createPool(3);
 /// 
 /// Then we load our fibonacci function in all the pool's threads:

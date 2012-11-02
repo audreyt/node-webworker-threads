@@ -7,7 +7,7 @@ function cb (err, data) {
   this.eval('fibo(35)', cb);
 }
 
-var thread= require('threads_a_gogo').create();
+var thread= require('webworker-threads').create();
 
 thread.eval(fibo).eval('fibo(35)', cb);
 

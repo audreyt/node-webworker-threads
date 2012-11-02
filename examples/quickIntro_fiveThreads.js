@@ -7,13 +7,13 @@ function cb (err, data) {
   this.eval('fibo(35)', cb);
 }
 
-var threads_a_gogo= require('threads_a_gogo');
+var Worker= require('webworker-threads');
 
-threads_a_gogo.create().eval(fibo).eval('fibo(35)', cb);
-threads_a_gogo.create().eval(fibo).eval('fibo(35)', cb);
-threads_a_gogo.create().eval(fibo).eval('fibo(35)', cb);
-threads_a_gogo.create().eval(fibo).eval('fibo(35)', cb);
-threads_a_gogo.create().eval(fibo).eval('fibo(35)', cb);
+Worker.create().eval(fibo).eval('fibo(35)', cb);
+Worker.create().eval(fibo).eval('fibo(35)', cb);
+Worker.create().eval(fibo).eval('fibo(35)', cb);
+Worker.create().eval(fibo).eval('fibo(35)', cb);
+Worker.create().eval(fibo).eval('fibo(35)', cb);
 
 (function spinForever () {
   process.stdout.write(".");

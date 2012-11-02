@@ -9,7 +9,7 @@ function fibo(n) {
 	return n > 1 ? fibo(n - 1) + fibo(n - 2) : 1;
 }
 /// Then, we create a worker thread with the `Threads.create` call:
-var Threads = require('threads_a_gogo');
+var Threads = require('webworker-threads');
 var t = Threads.create();
 /// In the next step, we load the function into the worker thead.
 /// We get the function's source with `fibo.toString()` and we 

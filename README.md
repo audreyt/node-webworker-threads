@@ -271,9 +271,20 @@ var worker= new Threads.Worker(function(){ ... });
 var worker= new Threads.Worker();
 ```
 ##### .postMessage( data )
-##### .addEventListener( event, cb )
+`worker.postMessage({ x: 1, y: 2 })` -> sends a data structure into the worker. The worker can reive it using the `onmessage` handler.
 ##### .onmessage
+`worker.onmessage = function (event) { console.log(event.data) };` -> receives data from the worker's `.postMessage` calls.
+##### .terminate()
+`worker.terminate()` -> terminates the worker thread.
+##### .addEventListener( type, cb )
+`worker.addEventListener('message', callback)` is equivalent to setting `worker.onmesssage = callback`.
+##### .dispatchEvent( event )
+Currently unplemented.
+##### .removeEventListener( type )
+Currently unplemented.
 ##### .thread
+Returns the underlying `thread` object; see the next section for details.
+Note that this attribute is implementation-specific, and not part of W3C Web Worker API.
 
 ***
 ### Thread API
@@ -326,12 +337,23 @@ threadPool= Threads.createPool( numberOfThreads );
 ***
 ### Global Web Worker API
 
-Inside every new Worker from webworker-threads, there's a global `self` object with these properties:
+Inside every Worker instance from webworker-threads, there's a global `self` object with these properties:
 
 ##### .postMessage( data )
-##### .addEventListener( event, cb )
+`self.postMessage({ x: 1, y: 2 })` -> sends a data structure back to the main thread.
 ##### .onmessage
+`self.onmessage = function (event) { ... };` -> receives data from the main thread's `.postMessage` calls.
+##### .close()
+`self.close()` -> stops the current thread.
+##### .addEventListener( type, cb )
+`self.addEventListener('message', callback)` is equivalent to setting `self.onmesssage = callback`.
+##### .dispatchEvent( event )
+`self.dispatchEvent({ type: 'message', data: data })` -> same as `self.postMessage(data)`.
+##### .removeEventListener( type )
+Currently unplemented.
 ##### .thread
+Returns the underlying `thread` object; see the next section for details.
+Note that this attribute is implementation-specific, and not part of W3C Web Worker API.
 
 ***
 ### Global thread API

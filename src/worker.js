@@ -18,10 +18,19 @@ function Worker(){
         return t.destroy();
       };
       this.addEventListener = function(event, cb){
-        return this$.onmessage = cb;
+        if (event === 'message') {
+          return this$.onmessage = cb;
+        } else {
+          return t.on(event, cb);
+        }
       };
-      this.postMessage = function(msg){
-        return t.emit('message', JSON.stringify(msg));
+      this.dispatchEvent = function(event){
+        return t.emit(event.type, JSON.stringify(event));
+      };
+      this.postMessage = function(data){
+        return t.emit('message', JSON.stringify({
+          data: data
+        }));
       };
       if (typeof code === 'function') {
         t.eval("(" + code + ")()");

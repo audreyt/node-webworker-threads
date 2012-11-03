@@ -27,9 +27,7 @@ function ThreadNextTick(){
   thread.nextTick = nextTick;
   self.addEventListener = function(event, cb){
     return this.thread.on(event, function(json){
-      return cb({
-        data: JSON.parse(json)
-      });
+      return cb(JSON.parse(json));
     });
   };
   self.close = function(){

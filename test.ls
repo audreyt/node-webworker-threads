@@ -1,6 +1,6 @@
 { Worker } = require \webworker-threads
 w = new Worker ->
-    self.onmessage = (data: {max}) ->
+    self.addEventListener \x (data: {max}) ->
         :search for n from 2 to max
             for i from 2 to Math.sqrt n
                 continue search unless n % i
@@ -8,4 +8,4 @@ w = new Worker ->
 w.onmessage = (data: {result}) ->
     console.log "#result is a prime"
     @terminate!
-w.postMessage max: 10000
+w.dispatchEvent type: \x data: max: 10000

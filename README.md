@@ -257,7 +257,7 @@ The `examples` directory contains a few more examples:
 var Threads= require('webworker-threads');
 ```
 ##### .Worker
-`new Threads.Worker( file-or-function )` -> Worker object
+`new Threads.Worker( [ file | function ] )` -> Worker object
 ##### .create()
 `Threads.create( /* no arguments */ )` -> thread object
 ##### .createPool( numThreads )
@@ -268,10 +268,12 @@ var Threads= require('webworker-threads');
 ``` javascript
 var worker= new Threads.Worker('worker.js');
 var worker= new Threads.Worker(function(){ ... });
+var worker= new Threads.Worker();
 ```
 ##### .postMessage( data )
 ##### .addEventListener( event, cb )
 ##### .onmessage
+##### .thread
 
 ***
 ### Thread API

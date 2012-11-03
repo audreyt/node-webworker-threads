@@ -8,5 +8,5 @@ function Worker () => Threads = this; class
         @post-message = (msg) -> t.emit \message JSON.stringify msg
         if typeof code is \function
             t.eval "(#code)()"
-        else
+        else if code?
             t.load code

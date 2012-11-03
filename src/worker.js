@@ -25,7 +25,7 @@ function Worker(){
       };
       if (typeof code === 'function') {
         t.eval("(" + code + ")()");
-      } else {
+      } else if (code != null) {
         t.load(code);
       }
     }

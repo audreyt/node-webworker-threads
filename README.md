@@ -51,7 +51,7 @@ do function spin
 -----------
 WIP WIP WIP
 -----------
-Note that everything below this line is under construction, and doesn't work yet as advertised.
+Note that everything below this line is under construction and subject to change.
 -----------
 
 ## (not so) Quick Intro

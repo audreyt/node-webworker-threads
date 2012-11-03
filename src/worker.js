@@ -5,13 +5,13 @@ function Worker(){
     var prototype = constructor.prototype;
     function constructor(code){
       var t, this$ = this;
-      this.t = t = Threads.create();
-      this.t.on('message', function(it){
+      this.thread = t = Threads.create();
+      t.on('message', function(it){
         return typeof this$.onmessage === 'function' ? this$.onmessage({
           data: it
         }) : void 8;
       });
-      this.t.on('close', function(){
+      t.on('close', function(){
         return t.destroy();
       });
       this.terminate = function(){
@@ -24,9 +24,9 @@ function Worker(){
         return t.emit('message', msg);
       };
       if (typeof code === 'function') {
-        this.t.eval("(" + code + ")()");
+        t.eval("(" + code + ")()");
       } else {
-        this.t.load(code);
+        t.load(code);
       }
     }
     return constructor;

@@ -15,21 +15,37 @@ With [npm](http://npmjs.org/):
 Sample usage (adapted from [MDN](https://developer.mozilla.org/en-US/docs/DOM/Using_web_workers#Passing_data)):
 
 ```js
-    var Worker = require('webworker-threads').Worker;
-    // var w = new Worker('worker.js'); // Standard API
+var Worker = require('webworker-threads').Worker;
+// var w = new Worker('worker.js'); // Standard API
 
-    // You may also pass in a function:
-    var worker = new Worker(function(){
-        self.postMessage("I'm working before postMessage('ali').");
-        self.onmessage = function(event) {
-              self.postMessage('Hi ' + event.data);
-              self.close();
-        };
-    });
-    worker.onmessage = function(event) {
-          console.log("Worker said : " + event.data);
+// You may also pass in a function:
+var worker = new Worker(function(){
+    self.postMessage("I'm working before postMessage('ali').");
+    self.onmessage = function(event) {
+          self.postMessage('Hi ' + event.data);
+          self.close();
     };
-    worker.postMessage('ali');
+});
+worker.onmessage = function(event) {
+      console.log("Worker said : " + event.data);
+};
+worker.postMessage('ali');
+```
+
+A more involved example in [LiveScript](http://livescript.net/) syntax:
+
+```coffee
+{Worker} = require \webworker-threads
+w = new Worker ->
+    fibo = (n) -> if n > 1 then fibo(n - 1) + fibo(n - 2) else 1
+    self.onmessage = -> self.postMessage fibo it.data
+w.postMessage Math.ceil Math.random! * 30
+w.onmessage = ->
+    process.stdout.write it.data
+    w.postMessage Math.ceil Math.random! * 30
+do function spin
+    process.stdout.write '.'
+    process.nextTick spin
 ```
 
 -----------

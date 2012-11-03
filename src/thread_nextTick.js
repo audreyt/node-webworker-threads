@@ -26,9 +26,9 @@ function ThreadNextTick(){
   thread._ntq = [];
   thread.nextTick = nextTick;
   self.addEventListener = function(event, cb){
-    return this.thread.on(event, function(data){
+    return this.thread.on(event, function(json){
       return cb({
-        data: data
+        data: JSON.parse(json)
       });
     });
   };

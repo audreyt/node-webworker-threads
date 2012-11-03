@@ -41,7 +41,7 @@ w = new Worker ->
     self.onmessage = -> self.postMessage fibo it.data
 w.postMessage Math.ceil Math.random! * 30
 w.onmessage = ->
-    process.stdout.write it.data
+    console.log it.data
     w.postMessage Math.ceil Math.random! * 30
 do function spin
     process.stdout.write '.'

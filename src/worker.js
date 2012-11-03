@@ -6,9 +6,9 @@ function Worker(){
     function constructor(code){
       var t, this$ = this;
       this.thread = t = Threads.create();
-      t.on('message', function(it){
+      t.on('message', function(json){
         return typeof this$.onmessage === 'function' ? this$.onmessage({
-          data: it
+          data: JSON.parse(json)
         }) : void 8;
       });
       t.on('close', function(){
@@ -21,7 +21,7 @@ function Worker(){
         return this$.onmessage = cb;
       };
       this.postMessage = function(msg){
-        return t.emit('message', msg);
+        return t.emit('message', JSON.stringify(msg));
       };
       if (typeof code === 'function') {
         t.eval("(" + code + ")()");

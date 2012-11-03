@@ -17,7 +17,7 @@ function ThreadNextTick
     thread._ntq = []
     thread.next-tick = next-tick
     self.addEventListener = (event, cb) ->
-        @thread.on event, (data) -> cb {data}
+        @thread.on event, (json) -> cb data: JSON.parse json
     self.close = -> @thread.emit \close
     Object.defineProperty self, \onmessage do
         set: (cb) -> @addEventListener \message cb

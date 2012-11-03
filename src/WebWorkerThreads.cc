@@ -649,8 +649,7 @@ static Handle<Value> postMessage (const Arguments &args) {
   //fprintf(stdout, "*** threadEmit\n");
   
   if (!args.Length()) return scope.Close(args.This());
-  
-  int i;
+
   typeThread* thread= (typeThread*) Isolate::GetCurrent()->GetData();
   
   typeQueueItem* qitem= nuJobQueueItem();
@@ -660,11 +659,16 @@ static Handle<Value> postMessage (const Arguments &args) {
   job->typeEvent.length= args.Length();
   job->typeEvent.eventName= new String::Utf8Value(String::New("message"));
   job->typeEvent.argumentos= (v8::String::Utf8Value**) malloc(job->typeEvent.length* sizeof(void*));
-  
-  i=0;
-  do {
-    job->typeEvent.argumentos[i]= new String::Utf8Value(args[i]);
-  } while (++i <= job->typeEvent.length);
+
+  Handle<Object> json = Handle<Object>::Cast(
+    thread->context->Global()->Get(String::New("JSON")));
+  Handle<Function> func = Handle<Function>::Cast(
+    json->GetRealNamedProperty(String::New("stringify")));
+  Handle<Value> jsonArgs[1];
+  jsonArgs[0] = args[0];
+  job->typeEvent.argumentos[0] = new String::Utf8Value(
+    func->Call(thread->context->Global(), 1, jsonArgs)->ToString()
+  );
   
   queue_push(qitem, &thread->outQueue);
   if (!(thread->inQueue.length)) uv_async_send(&thread->async_watcher); // wake up callback

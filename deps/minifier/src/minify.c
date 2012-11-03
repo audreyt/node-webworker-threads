@@ -409,12 +409,17 @@ and then minify the input.
 */
 int main (int argc, char* argv[]) {
   if (argv[1] == NULL) exit(1);
-  fprintf(stdout, "static const char* %s= \"", argv[1]);
+  fprintf(stdout, "static const char* %s= \"(", argv[1]);
   /*
   len= 0;
   first= 1;
   */
   jsmin();
-  puts("\";");
+  if (argv[2] == NULL) {
+      puts(")\";");
+  }
+  else {
+      puts(")()\";");
+  }
   return 0;
 }

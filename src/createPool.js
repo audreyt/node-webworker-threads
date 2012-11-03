@@ -1,185 +1,169 @@
-(function createPool (n) {
-  'use strict';
-  
-  //2011-11 Proyectos Equis Ka, s.l., jorge@jorgechamorro.com
-  //threads_a_gogo_createPool.js
-  
-  var T= this;
-  
-  n= Math.floor(n);
+function createPool(n){
+  var T, pool, idleThreads, q, poolObject, e, RUN, EMIT;
+  T = this;
+  n = Math.floor(n);
   if (!(n > 0)) {
-    throw '.createPool( numOfThreads ): numOfThreads must be a Number > 0';
+    throw '.createPool( num ): number of threads must be a Number > 0';
   }
-  
-  var kTypeRun= 1;
-  var kTypeEmit= 2;
-  var pool= [];
-  var idleThreads= [];
-  var q= { first:null, last:null, length:0 };
-  var poolObject= {
-    any: { eval:evalAny, emit:emitAny },
-    all: { eval:evalAll, emit:emitAll },
-    on: on,
-    totalThreads: function getNumThreads () { return pool.length },
-    idleThreads: function getIdleThreads () { return idleThreads.length },
-    pendingJobs: function getPendingJobs () { return q.length },
-    destroy:destroy,
-    load:poolLoad
+  pool = [];
+  idleThreads = [];
+  q = {
+    first: null,
+    last: null,
+    length: 0
   };
-  
+  poolObject = {
+    on: onEvent,
+    load: poolLoad,
+    destroy: destroy,
+    pendingJobs: getPendingJobs,
+    idleThreads: getIdleThreads,
+    totalThreads: getNumThreads,
+    any: {
+      eval: evalAny,
+      emit: emitAny
+    },
+    all: {
+      eval: evalAll,
+      emit: emitAll
+    }
+  };
   try {
     while (n--) {
-      pool[n]= idleThreads[n]= T.create();
+      pool[n] = idleThreads[n] = T.create();
     }
-  }
-  catch (e) {
-    destroy(1);
+  } catch (e$) {
+    e = e$;
+    destroy('rudely');
     throw e;
   }
-
-
-
-  function poolLoad (path, cb) {
-    var i= pool.length;
+  return poolObject;
+  RUN = 1;
+  EMIT = 2;
+  function poolLoad(path, cb){
+    var i;
+    i = pool.length;
     while (i--) {
       pool[i].load(path, cb);
     }
   }
-
-
-  function nextJob (t) {
-    var job= qPull();
+  function nextJob(t){
+    var job;
+    job = qPull();
     if (job) {
-      if (job.type === kTypeRun) {
-        t.eval(job.srcTextOrEventType, function idleCB (e, d) {
+      if (job.type === RUN) {
+        t.eval(job.srcTextOrEventType, function(e, d){
+          var f;
           nextJob(t);
-          var f= job.cbOrData;
+          f = job.cbOrData;
           if (f) {
-            job.cbOrData.call(t, e, d);
+            return job.cbOrData.call(t, e, d);
           }
         });
+      } else {
+        if (job.type === EMIT) {
+          t.emit(job.srcTextOrEventType, job.cbOrData);
+          nextJob(t);
+        }
       }
-      else if (job.type === kTypeEmit) {
-        t.emit(job.srcTextOrEventType, job.cbOrData);
-        nextJob(t);
-      }
-    }
-    else {
+    } else {
       idleThreads.push(t);
     }
   }
-
-
-
-  function qPush (srcTextOrEventType, cbOrData, type) {
-    var job= { next:null, srcTextOrEventType:srcTextOrEventType, cbOrData:cbOrData, type:type };
+  function qPush(srcTextOrEventType, cbOrData, type){
+    var job;
+    job = {
+      srcTextOrEventType: srcTextOrEventType,
+      cbOrData: cbOrData,
+      type: type,
+      next: null
+    };
     if (q.last) {
-      q.last.next= job;
-      q.last= job;
-    }
-    else {
-      q.first= q.last= job;
+      q.last = q.last.next = job;
+    } else {
+      q.first = q.last = job;
     }
     q.length++;
   }
-
-
-
-  function qPull () {
-    var job= q.first;
+  function qPull(){
+    var job;
+    job = q.first;
     if (job) {
       if (q.last === job) {
-        q.first= q.last= null;
+        q.first = q.last = null;
+      } else {
+        q.first = job.next;
       }
-      else {
-        q.first= job.next;
-      }
-      //job.next= null;
       q.length--;
     }
     return job;
   }
-
-
-
-  function evalAny (src, cb) {
-    qPush(src, cb, kTypeRun);
+  function evalAny(src, cb){
+    qPush(src, cb, RUN);
     if (idleThreads.length) {
       nextJob(idleThreads.pop());
     }
-    
     return poolObject;
   }
-
-
-
-  function evalAll (src, cb) {
-    pool.forEach(function (v,i,o) {
-      v.eval(src, cb);
+  function evalAll(src, cb){
+    pool.forEach(function(v, i, o){
+      return v.eval(src, cb);
     });
-    
     return poolObject;
   }
-
-
-
-  function emitAny (event, data) {
-    qPush(event, data, kTypeEmit);
+  function emitAny(event, data){
+    qPush(event, data, EMIT);
     if (idleThreads.length) {
       nextJob(idleThreads.pop());
     }
-    
     return poolObject;
   }
-
-
-
-  function emitAll (event, data) {
-    pool.forEach(function (v,i,o) {
-      v.emit(event, data);
+  function emitAll(event, data){
+    pool.forEach(function(v, i, o){
+      return v.emit(event, data);
     });
-    
     return poolObject;
   }
-
-
-
-  function on (event, cb) {
-    pool.forEach(function (v,i,o) {
-      v.on(event, cb);
+  function onEvent(event, cb){
+    pool.forEach(function(v, i, o){
+      return v.on(event, cb);
     });
-    
     return this;
   }
-
-
-  function destroy (rudely) {
-    function err () {
+  function destroy(rudely){
+    var err, beNice, beRude;
+    err = function(){
       throw 'This thread pool has been destroyed';
-    }
-    
-    function beNice () {
+    };
+    beNice = function(){
       if (q.length) {
-        setTimeout(beNice, 666);
+        return setTimeout(beNice, 666);
+      } else {
+        return beRude();
       }
-      else {
-        beRude();
-      }
-    }
-    
-    function beRude () {
-      q.length= 0;
-      q.first= null;
-      pool.forEach(function (v,i,o) {
-        v.destroy();
+    };
+    beRude = function(){
+      q.length = 0;
+      q.first = null;
+      pool.forEach(function(v, i, o){
+        return v.destroy();
       });
-      poolObject.eval= poolObject.totalThreads= poolObject.idleThreads= poolObject.pendingJobs= poolObject.destroy= err;
+      return poolObject.eval = poolObject.totalThreads = poolObject.idleThreads = poolObject.pendingJobs = poolObject.destroy = err;
+    };
+    if (rudely) {
+      beRude();
+    } else {
+      beNice();
     }
-    
-    rudely ? beRude() : beNice();
   }
-
-
-
-  return poolObject;
-})
+  function getNumThreads(){
+    return pool.length;
+  }
+  function getIdleThreads(){
+    return idleThreads.length;
+  }
+  function getPendingJobs(){
+    return q.length;
+  }
+  return getPendingJobs;
+}

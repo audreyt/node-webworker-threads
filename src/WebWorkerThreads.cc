@@ -87,6 +87,7 @@ gcc minify.c -o minify
 cat ../../../src/events.js | ./minify kEvents_js > ../../../src/kEvents_js
 cat ../../../src/load.js | ./minify kLoad_js > ../../../src/kLoad_js
 cat ../../../src/createPool.js | ./minify kCreatePool_js > ../../../src/kCreatePool_js
+cat ../../../src/worker.js | ./minify kWorker_js > ../../../src/kWorker_js
 cat ../../../src/thread_nextTick.js | ./minify kThread_nextTick_js > ../../../src/kThread_nextTick_js
 
 */
@@ -94,6 +95,7 @@ cat ../../../src/thread_nextTick.js | ./minify kThread_nextTick_js > ../../../sr
 #include "events.js.c"
 //#include "load.js.c"
 #include "createPool.js.c"
+#include "worker.js.c"
 #include "thread_nextTick.js.c"
 //#include "JASON.js.c"
 
@@ -226,6 +228,7 @@ static void* aThread (void* arg) {
 
 
 static Handle<Value> threadEmit (const Arguments &args);
+static Handle<Value> postMessage (const Arguments &args);
 
 static void eventLoop (typeThread* thread) {
   thread->isolate->Enter();
@@ -236,8 +239,13 @@ static void eventLoop (typeThread* thread) {
     HandleScope scope1;
     
     Local<Object> global= thread->context->Global();
+    global->Set(String::NewSymbol("self"), global);
+
     global->Set(String::NewSymbol("puts"), FunctionTemplate::New(Puts)->GetFunction());
-	  global->Set(String::NewSymbol("print"), FunctionTemplate::New(Print)->GetFunction());
+    global->Set(String::NewSymbol("print"), FunctionTemplate::New(Print)->GetFunction());
+
+    global->Set(String::NewSymbol("postMessage"), FunctionTemplate::New(postMessage)->GetFunction());
+
     Local<Object> threadObject= Object::New();
     global->Set(String::NewSymbol("thread"), threadObject);
     
@@ -635,6 +643,36 @@ static Handle<Value> processEmit (const Arguments &args) {
 
 
 
+static Handle<Value> postMessage (const Arguments &args) {
+  HandleScope scope;
+  
+  //fprintf(stdout, "*** threadEmit\n");
+  
+  if (!args.Length()) return scope.Close(args.This());
+  
+  int i;
+  typeThread* thread= (typeThread*) Isolate::GetCurrent()->GetData();
+  
+  typeQueueItem* qitem= nuJobQueueItem();
+  typeJob* job= (typeJob*) qitem->asPtr;
+  
+  job->jobType= kJobTypeEvent;
+  job->typeEvent.length= args.Length();
+  job->typeEvent.eventName= new String::Utf8Value(String::New("message"));
+  job->typeEvent.argumentos= (v8::String::Utf8Value**) malloc(job->typeEvent.length* sizeof(void*));
+  
+  i=0;
+  do {
+    job->typeEvent.argumentos[i]= new String::Utf8Value(args[i]);
+  } while (++i <= job->typeEvent.length);
+  
+  queue_push(qitem, &thread->outQueue);
+  if (!(thread->inQueue.length)) uv_async_send(&thread->async_watcher); // wake up callback
+  
+  //fprintf(stdout, "*** threadEmit END\n");
+  
+  return scope.Close(args.This());
+}
 
 static Handle<Value> threadEmit (const Arguments &args) {
   HandleScope scope;
@@ -734,6 +772,7 @@ void Init (Handle<Object> target) {
   
   target->Set(String::NewSymbol("create"), FunctionTemplate::New(Create)->GetFunction());
   target->Set(String::NewSymbol("createPool"), Script::Compile(String::New(kCreatePool_js))->Run()->ToObject());
+  target->Set(String::NewSymbol("Worker"), Script::Compile(String::New(kWorker_js))->Run()->ToObject()->CallAsFunction(target, 0, NULL)->ToObject());
   //target->Set(String::NewSymbol("JASON"), Script::Compile(String::New(kJASON_js))->Run()->ToObject());
   
   id_symbol= Persistent<String>::New(String::NewSymbol("id"));

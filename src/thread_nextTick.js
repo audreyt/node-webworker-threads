@@ -25,5 +25,17 @@ function ThreadNextTick(){
   }
   thread._ntq = [];
   thread.nextTick = nextTick;
+  self.addEventListener = function(event, cb){
+    return this.thread.on(event, function(data){
+      return cb({
+        data: data
+      });
+    });
+  };
+  Object.defineProperty(self, 'onmessage', {
+    set: function(cb){
+      return this.addEventListener('message', cb);
+    }
+  });
   return dispatchNextTicks;
 }

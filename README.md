@@ -91,7 +91,7 @@ function fibo (n) {
 })();
 ```
 
-**C.-** The program below uses `threads_a_gogo` to run the fibonacci(35) calls in a background thread, so Node's event loop isn't blocked at all and can spin freely again at full speed:
+**C.-** The program below uses `webworker-threads` to run the fibonacci(35) calls in a background thread, so Node's event loop isn't blocked at all and can spin freely again at full speed:
 
     cat examples/quickIntro_oneThread.js
   
@@ -105,7 +105,7 @@ function cb (err, data) {
   this.eval('fibo(35)', cb);
 }
 
-var thread= require('threads_a_gogo').create();
+var thread= require('webworker-threads').create();
 
 thread.eval(fibo).eval('fibo(35)', cb);
 
@@ -129,13 +129,13 @@ function cb (err, data) {
   this.eval('fibo(35)', cb);
 }
 
-var threads_a_gogo= require('threads_a_gogo');
+var Threads= require('webworker-threads');
 
-threads_a_gogo.create().eval(fibo).eval('fibo(35)', cb);
-threads_a_gogo.create().eval(fibo).eval('fibo(35)', cb);
-threads_a_gogo.create().eval(fibo).eval('fibo(35)', cb);
-threads_a_gogo.create().eval(fibo).eval('fibo(35)', cb);
-threads_a_gogo.create().eval(fibo).eval('fibo(35)', cb);
+Threads.create().eval(fibo).eval('fibo(35)', cb);
+Threads.create().eval(fibo).eval('fibo(35)', cb);
+Threads.create().eval(fibo).eval('fibo(35)', cb);
+Threads.create().eval(fibo).eval('fibo(35)', cb);
+Threads.create().eval(fibo).eval('fibo(35)', cb);
 
 (function spinForever () {
   process.stdout.write(".");
@@ -143,7 +143,7 @@ threads_a_gogo.create().eval(fibo).eval('fibo(35)', cb);
 })();
 ```
 
-**E.-** The next one asks `threads_a_gogo` to create a pool of 10 background threads, instead of creating them manually one by one:
+**E.-** The next one asks `webworker-threads` to create a pool of 10 background threads, instead of creating them manually one by one:
 
     cat examples/multiThread.js
 
@@ -153,7 +153,7 @@ function fibo (n) {
 }
 
 var numThreads= 10;
-var threadPool= require('threads_a_gogo').createPool(numThreads).all.eval(fibo);
+var threadPool= require('webworker-threads').createPool(numThreads).all.eval(fibo);
 
 threadPool.all.eval('fibo(35)', function cb (err, data) {
   process.stdout.write(" ["+ this.id+ "]"+ data);
@@ -166,12 +166,12 @@ threadPool.all.eval('fibo(35)', function cb (err, data) {
 })();
 ```
 
-**F.-** This is a demo of the `threads_a_gogo` eventEmitter API, using one thread:
+**F.-** This is a demo of the `webworker-threads` eventEmitter API, using one thread:
 
     cat examples/quickIntro_oneThreadEvented.js
 
 ``` javascript
-var thread= require('threads_a_gogo').create();
+var thread= require('webworker-threads').create();
 thread.load(__dirname + '/quickIntro_evented_childThreadCode.js');
 
 /*
@@ -202,13 +202,13 @@ thread.on('theFiboIs', function cb (data) {
 })();
 ```
 
-**G.-** This is a demo of the `threads_a_gogo` eventEmitter API, using a pool of threads:
+**G.-** This is a demo of the `webworker-threads` eventEmitter API, using a pool of threads:
 
     cat examples/quickIntro_multiThreadEvented.js
 
 ``` javascript
 var numThreads= 10;
-var threadPool= require('threads_a_gogo').createPool(numThreads);
+var threadPool= require('webworker-threads').createPool(numThreads);
 threadPool.load(__dirname + '/quickIntro_evented_childThreadCode.js');
 
 /*
@@ -254,17 +254,29 @@ The `examples` directory contains a few more examples:
 
 ### Module API
 ``` javascript
-var threads_a_gogo= require('threads_a_gogo');
+var Threads= require('webworker-threads');
 ```
+##### .Worker
+`new Threads.Worker( file-or-function )` -> Worker object
 ##### .create()
-`threads_a_gogo.create( /* no arguments */ )` -> thread object
+`Threads.create( /* no arguments */ )` -> thread object
 ##### .createPool( numThreads )
-`threads_a_gogo.createPool( numberOfThreads )` -> threadPool object
+`Threads.createPool( numberOfThreads )` -> threadPool object
+
+***
+### Web Worker API
+``` javascript
+var worker= new Threads.Worker('worker.js');
+var worker= new Threads.Worker(function(){ ... });
+```
+##### .postMessage( data )
+##### .addEventListener( event, cb )
+##### .onmessage
 
 ***
 ### Thread API
 ``` javascript
-var thread= threads_a_gogo.create();
+var thread= Threads.create();
 ```
 ##### .id
 `thread.id` -> a sequential thread serial number
@@ -286,7 +298,7 @@ var thread= threads_a_gogo.create();
 ***
 ### Thread pool API
 ``` javascript
-threadPool= threads_a_gogo.createPool( numberOfThreads );
+threadPool= Threads.createPool( numberOfThreads );
 ```
 ##### .load( absolutePath [, cb] )
 `threadPool.load( absolutePath [, cb] )` -> `thread.load( absolutePath [, cb] )` in all the pool's threads.
@@ -310,9 +322,19 @@ threadPool= threads_a_gogo.createPool( numberOfThreads );
 `threadPool.destroy( [ rudely ] )` -> waits until `pendingJobs()` is zero and then destroys the pool. If `rudely` is truthy, then it doesn't wait for `pendingJobs === 0`.
 
 ***
+### Global Web Worker API
+
+Inside every new Worker from webworker-threads, there's a global `self` object with these properties:
+
+##### .postMessage( data )
+##### .addEventListener( event, cb )
+##### .onmessage
+##### .thread
+
+***
 ### Global thread API
 
-Inside every thread .create()d by threads_a_gogo, there's a global `thread` object with these properties:
+Inside every thread .create()d by webworker-threads, there's a global `thread` object with these properties:
 ##### .id
 `thread.id` -> the serial number of this thread
 ##### .on( eventType, listener )
@@ -329,13 +351,13 @@ Inside every thread .create()d by threads_a_gogo, there's a global `thread` obje
 ***
 ### Global puts
 
-Inside every thread .create()d by threads_a_gogo, there's a global `puts`:
+Inside every thread .create()d by webworker-threads, there's a global `puts`:
 ##### puts(arg1 [, arg2 ...])
 `puts(arg1 [, arg2 ...])` -> .toString()s and prints its arguments to stdout.
 
 ## Rationale
 
-[Node.js](http://nodejs.org) is the most [awesome, cute and super-sexy](http://javascriptology.com/threads_a_gogo/sexy.jpg) piece of free, open source software.
+[Node.js](http://nodejs.org) is the most [awesome, cute and super-sexy](http://javascriptology.com/webworker-threads/sexy.jpg) piece of free, open source software.
 
 Its event loop can spin as fast and smooth as a turbo, and roughly speaking, **the faster it spins, the more power it delivers**. That's why [@ryah](http://twitter.com/ryah) took great care to ensure that no -possibly slow- I/O operations could ever block it: a pool of background threads (thanks to [Marc Lehmann's libeio library](http://software.schmorp.de/pkg/libeio.html)) handle any blocking I/O calls in the background, in parallel.
 
@@ -364,21 +386,21 @@ http.createServer(function cb (req,res) {
 }).listen(port);
 ```
 
-You simply can't, because there's no way... well, there wasn't before `threads_a_gogo`.
+You simply can't, because there's no way... well, there wasn't before `webworker-threads`.
 
 ### What is Threads A GoGo for Node.js
 
-`threads_a_gogo` provides the asynchronous API for CPU-bound tasks that's missing in Node.js. Both in continuation passing style (callbacks), and in event emitter style (event listeners).
+`webworker-threads` provides the asynchronous API for CPU-bound tasks that's missing in Node.js. Both in continuation passing style (callbacks), and in event emitter style (event listeners).
 
 The same API Node uses to delegate a longish I/O task to a background (libeio) thread:
 
 `asyncIOTask(what, cb);`
 
-`threads_a_gogo` uses to delegate a longish CPU task to a background (JavaScript) thread:
+`webworker-threads` uses to delegate a longish CPU task to a background (JavaScript) thread:
 
 `thread.eval(program, cb);`
 
-So with `threads_a_gogo` you can write:
+So with `webworker-threads` you can write:
 
 ``` javascript
 http.createServer(function (req,res) {

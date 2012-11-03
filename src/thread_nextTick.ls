@@ -18,6 +18,7 @@ function ThreadNextTick
     thread.next-tick = next-tick
     self.addEventListener = (event, cb) ->
         @thread.on event, (data) -> cb {data}
+    self.close = -> @thread.emit \close
     Object.defineProperty self, \onmessage do
         set: (cb) -> @addEventListener \message cb
     return dispatch-next-ticks

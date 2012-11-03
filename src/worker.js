@@ -11,6 +11,9 @@ function Worker(){
           data: it
         }) : void 8;
       });
+      this.t.on('close', function(){
+        return t.destroy();
+      });
       this.terminate = function(){
         return t.destroy();
       };

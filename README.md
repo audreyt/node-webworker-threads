@@ -4,11 +4,7 @@ This is based on @xk (jorgechamorro)'s [Threads A GoGo for Node.js](https://gith
 
 This module provides an asynchronous, evented and/or continuation passing style API for moving blocking/longish CPU-bound tasks out of Node's event loop to JavaScript threads that run in parallel in the background and that use all the available CPU cores automatically; all from within a single Node process.
 
------------
-WIP WIP WIP
------------
-Note that everything below this line is under construction, and doesn't work yet as advertised.
------------
+This module requires Node.js 0.6.0 or later.
 
 ## Installing the module
 
@@ -16,11 +12,31 @@ With [npm](http://npmjs.org/):
 
     npm install webworker-threads
 
-To include the module in your project:
+Sample usage (adapted from [MDN](https://developer.mozilla.org/en-US/docs/DOM/Using_web_workers#Passing_data)):
 
-    var Worker = require('webworker-threads');
+```js
+    var Worker = require('webworker-threads').Worker;
+    // var w = new Worker('worker.js'); // Standard API
 
-This module requires Node.js 0.6.0 or later.
+    // You may also pass in a function:
+    var worker = new Worker(function(){
+        self.postMessage("I'm working before postMessage('ali').");
+        self.onmessage = function(event) {
+              self.postMessage('Hi ' + event.data);
+              self.close();
+        };
+    });
+    worker.onmessage = function(event) {
+          console.log("Worker said : " + event.data);
+    };
+    worker.postMessage('ali');
+```
+
+-----------
+WIP WIP WIP
+-----------
+Note that everything below this line is under construction, and doesn't work yet as advertised.
+-----------
 
 ## (not so) Quick Intro
 

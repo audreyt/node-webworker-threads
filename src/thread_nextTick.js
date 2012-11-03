@@ -32,6 +32,9 @@ function ThreadNextTick(){
       });
     });
   };
+  self.close = function(){
+    return this.thread.emit('close');
+  };
   Object.defineProperty(self, 'onmessage', {
     set: function(cb){
       return this.addEventListener('message', cb);

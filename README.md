@@ -381,7 +381,7 @@ Inside every thread .create()d by webworker-threads, there's a global `puts`:
 
 ## Rationale
 
-[Node.js](http://nodejs.org) is the most [awesome, cute and super-sexy](http://javascriptology.com/webworker-threads/sexy.jpg) piece of free, open source software.
+[Node.js](http://nodejs.org) is the most awesome, cute and super-sexy piece of free, open source software.
 
 Its event loop can spin as fast and smooth as a turbo, and roughly speaking, **the faster it spins, the more power it delivers**. That's why [@ryah](http://twitter.com/ryah) took great care to ensure that no -possibly slow- I/O operations could ever block it: a pool of background threads (thanks to [Marc Lehmann's libeio library](http://software.schmorp.de/pkg/libeio.html)) handle any blocking I/O calls in the background, in parallel.
 

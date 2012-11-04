@@ -1,6 +1,13 @@
-## 0.2.4
+## 0.3.1
 
 * Switch to BSON instead of JSON for message serialization.
+
+  Note that neither one supports circular structures or
+  native buffer objects yet.
+
+## 0.3.0
+
+* Require Node.js 0.8.
 
 ## 0.2.3
 

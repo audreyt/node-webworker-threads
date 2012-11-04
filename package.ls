@@ -16,19 +16,19 @@ repository:
   type: 'git'
   url: 'http://github.com/audreyt/node-webworker-threads.git'
 scripts:
-  prepublish: './node_modules/.bin/livescript -cj package.ls'
+  prepublish: 'env PATH=./node_modules/.bin:"$PATH" livescript -cj package.ls'
   js: """
-    ./node_modules/.bin/livescript -cj package.ls;
+    env PATH=./node_modules/.bin:"$PATH" livescript -cj package.ls;
     gcc deps/minifier/src/minify.c -o deps/minifier/bin/minify;
-    ./node_modules/.bin/livescript -cbp src/load.ls                      > src/load.js;
+    env PATH=./node_modules/.bin:"$PATH" livescript -cbp src/load.ls                      > src/load.js;
     ./deps/minifier/bin/minify kLoad_js              < src/load.js            > src/load.js.c;
-    ./node_modules/.bin/livescript -cbp src/worker.ls                    > src/worker.js;
+    env PATH=./node_modules/.bin:"$PATH" livescript -cbp src/worker.ls                    > src/worker.js;
     ./deps/minifier/bin/minify kWorker_js            < src/worker.js          > src/worker.js.c;
-    ./node_modules/.bin/livescript -cbp src/events.ls                    > src/events.js;
+    env PATH=./node_modules/.bin:"$PATH" livescript -cbp src/events.ls                    > src/events.js;
     ./deps/minifier/bin/minify kEvents_js            < src/events.js          > src/events.js.c;
-    ./node_modules/.bin/livescript -cbp src/thread_nextTick.ls           > src/thread_nextTick.js;
+    env PATH=./node_modules/.bin:"$PATH" livescript -cbp src/thread_nextTick.ls           > src/thread_nextTick.js;
     ./deps/minifier/bin/minify kThread_nextTick_js 1 < src/thread_nextTick.js > src/thread_nextTick.js.c;
-    ./node_modules/.bin/livescript -cbp src/createPool.ls                > src/createPool.js;
+    env PATH=./node_modules/.bin:"$PATH" livescript -cbp src/createPool.ls                > src/createPool.js;
     ./deps/minifier/bin/minify kCreatePool_js        < src/createPool.js      > src/createPool.js.c;
   """
 dev-dependencies:

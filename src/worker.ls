@@ -1,7 +1,7 @@
 function Worker () => Threads = this; class
     (code) ->
         @thread = t = Threads.create!
-        t.on \message (json) ~> @onmessage? data: JSON.parse json
+        t.on \message (args) ~> @onmessage? data: args
         t.on \close -> t.destroy!
         @terminate = -> t.destroy!
         @add-event-listener = (event, cb) ~>
@@ -9,8 +9,8 @@ function Worker () => Threads = this; class
                 @onmessage = cb
             else
                 t.on event, cb
-        @dispatch-event = (event) -> t.emit event.type, JSON.stringify event
-        @post-message = (data) -> t.emit \message JSON.stringify {data}
+        @dispatch-event = (event) -> t.emitSerialized event.type, event
+        @post-message = (data) -> t.emitSerialized \message {data}
         if typeof code is \function
             t.eval "(#code)()"
         else if code?

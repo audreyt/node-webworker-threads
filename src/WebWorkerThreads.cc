@@ -18,11 +18,13 @@ static int debug_allocs= 0;
 */
 
 #include "queues_a_gogo.cc"
+#include "bson.cc"
 
 //using namespace node;
 using namespace v8;
 
 static Persistent<String> id_symbol;
+static Persistent<String> require_symbol;
 static Persistent<ObjectTemplate> threadTemplate;
 static bool useLocker;
 
@@ -55,7 +57,8 @@ typedef struct {
 
 enum jobTypes {
   kJobTypeEval,
-  kJobTypeEvent
+  kJobTypeEvent,
+  kJobTypeEventSerialized
 };
 
 typedef struct {
@@ -67,6 +70,12 @@ typedef struct {
       String::Utf8Value* eventName;
       String::Utf8Value** argumentos;
     } typeEvent;
+    struct {
+      int length;
+      String::Utf8Value* eventName;
+      char* buffer;
+      size_t bufferSize;
+    } typeEventSerialized;
     struct {
       int error;
       int tiene_callBack;
@@ -240,7 +249,6 @@ static void eventLoop (typeThread* thread) {
 
     Local<Object> global= thread->context->Global();
     global->Set(String::NewSymbol("self"), global);
-
     global->Set(String::NewSymbol("puts"), FunctionTemplate::New(Puts)->GetFunction());
     global->Set(String::NewSymbol("print"), FunctionTemplate::New(Print)->GetFunction());
 
@@ -332,6 +340,29 @@ static void eventLoop (typeThread* thread) {
             }
 
             free(job->typeEvent.argumentos);
+            queue_push(qitem, freeJobsQueue);
+            dispatchEvents->CallAsFunction(global, 2, args);
+          }
+          else if (job->jobType == kJobTypeEventSerialized) {
+            Local<Value> args[2];
+            str= job->typeEventSerialized.eventName;
+            args[0]= String::New(**str, (*str).length());
+            delete str;
+
+      int len = job->typeEventSerialized.length;
+      Local<Array> array= Array::New(len);
+      args[1]= array;
+
+        {
+          BSON *bson = new BSON();
+          char* data = job->typeEventSerialized.buffer;
+          size_t size = job->typeEventSerialized.bufferSize;
+          BSONDeserializer deserializer(bson, data, size);
+          Local<Object> result = deserializer.DeserializeDocument()->ToObject();
+          int i = 0; do { array->Set(i, result->Get(i)); } while (++i < len);
+          free(data);
+        }
+
             queue_push(qitem, freeJobsQueue);
             dispatchEvents->CallAsFunction(global, 2, args);
           }
@@ -473,6 +504,30 @@ static void Callback (uv_async_t *watcher, int revents) {
       }
 
       free(job->typeEvent.argumentos);
+      queue_push(qitem, freeJobsQueue);
+      thread->dispatchEvents->CallAsFunction(thread->JSObject, 2, args);
+    }
+    else if (job->jobType == kJobTypeEventSerialized) {
+      Local<Value> args[2];
+
+      str= job->typeEventSerialized.eventName;
+      args[0]= String::New(**str, (*str).length());
+      delete str;
+
+      int len = job->typeEventSerialized.length;
+      Local<Array> array= Array::New(len);
+      args[1]= array;
+
+        {
+          BSON *bson = new BSON();
+          char* data = job->typeEventSerialized.buffer;
+          size_t size = job->typeEventSerialized.bufferSize;
+          BSONDeserializer deserializer(bson, data, size);
+          Local<Object> result = deserializer.DeserializeDocument()->ToObject();
+          int i = 0; do { array->Set(i, result->Get(i)); } while (++i < len);
+          free(data);
+        }
+
       queue_push(qitem, freeJobsQueue);
       thread->dispatchEvents->CallAsFunction(thread->JSObject, 2, args);
     }
@@ -639,36 +694,83 @@ static Handle<Value> processEmit (const Arguments &args) {
   return scope.Close(args.This());
 }
 
+static Handle<Value> processEmitSerialized (const Arguments &args) {
+  HandleScope scope;
 
+  //fprintf(stdout, "*** processEmit\n");
+  int len = args.Length();
 
+  if (!len) return scope.Close(args.This());
+
+  typeThread* thread= isAThread(args.This());
+  if (!thread) {
+    return ThrowException(Exception::TypeError(String::New("thread.emit(): the receiver must be a thread object")));
+  }
+
+  typeQueueItem* qitem= nuJobQueueItem();
+  typeJob* job= (typeJob*) qitem->asPtr;
+
+  job->jobType= kJobTypeEventSerialized;
+  job->typeEventSerialized.length= len-1;
+  job->typeEventSerialized.eventName= new String::Utf8Value(args[0]);
+  Local<Array> array= Array::New(len-1);
+  int i = 1; do { array->Set(i-1, args[i]); } while (++i < len);
+
+    {
+      char* buffer;
+      BSON *bson = new BSON();
+      size_t object_size;
+      Local<Object> object = bson->GetSerializeObject(array);
+      BSONSerializer<CountStream> counter(bson, false, false);
+      counter.SerializeDocument(object);
+      object_size = counter.GetSerializeSize();
+      buffer = (char *)malloc(object_size);
+      BSONSerializer<DataStream> data(bson, false, false, buffer);
+      data.SerializeDocument(object);
+      job->typeEventSerialized.buffer= buffer;
+      job->typeEventSerialized.bufferSize= object_size;
+    }
+
+  pushToInQueue(qitem, thread);
+
+  return scope.Close(args.This());
+}
 
 
 static Handle<Value> postMessage (const Arguments &args) {
   HandleScope scope;
+  int len = args.Length();
 
   //fprintf(stdout, "*** threadEmit\n");
 
-  if (!args.Length()) return scope.Close(args.This());
+  if (!len) return scope.Close(args.This());
 
   typeThread* thread= (typeThread*) Isolate::GetCurrent()->GetData();
 
   typeQueueItem* qitem= nuJobQueueItem();
   typeJob* job= (typeJob*) qitem->asPtr;
 
-  job->jobType= kJobTypeEvent;
-  job->typeEvent.length= args.Length();
-  job->typeEvent.eventName= new String::Utf8Value(String::New("message"));
-  job->typeEvent.argumentos= (v8::String::Utf8Value**) malloc(job->typeEvent.length* sizeof(void*));
+  job->jobType= kJobTypeEventSerialized;
+  job->typeEventSerialized.eventName= new String::Utf8Value(String::New("message"));
+  job->typeEventSerialized.length= len;
 
-  Handle<Object> json = Handle<Object>::Cast(
-    thread->context->Global()->Get(String::New("JSON")));
-  Handle<Function> func = Handle<Function>::Cast(
-    json->GetRealNamedProperty(String::New("stringify")));
-  Handle<Value> jsonArgs[1];
-  jsonArgs[0] = args[0];
-  job->typeEvent.argumentos[0] = new String::Utf8Value(
-    func->Call(thread->context->Global(), 1, jsonArgs)->ToString()
-  );
+  Local<Array> array= Array::New(len);
+  int i = 0; do { array->Set(i, args[i]); } while (++i < len);
+
+    {
+      char* buffer;
+      BSON *bson = new BSON();
+      size_t object_size;
+      Local<Object> object = bson->GetSerializeObject(array);
+      BSONSerializer<CountStream> counter(bson, false, false);
+      counter.SerializeDocument(object);
+      object_size = counter.GetSerializeSize();
+      buffer = (char *)malloc(object_size);
+      BSONSerializer<DataStream> data(bson, false, false, buffer);
+      data.SerializeDocument(object);
+      job->typeEventSerialized.buffer= buffer;
+      job->typeEventSerialized.bufferSize= object_size;
+    }
 
   queue_push(qitem, &thread->outQueue);
   if (!(thread->inQueue.length)) uv_async_send(&thread->async_watcher); // wake up callback
@@ -741,6 +843,11 @@ static Handle<Value> Create (const Arguments &args) {
     Local<Value> dispatchEvents= Script::Compile(String::New(kEvents_js))->Run()->ToObject()->CallAsFunction(thread->JSObject, 0, NULL);
     thread->dispatchEvents= Persistent<Object>::New(dispatchEvents->ToObject());
 
+    if (args.Length() > 0) {
+        thread->JSObject->Set(require_symbol, args[0]);
+    }
+
+
     uv_async_init(uv_default_loop(), &thread->async_watcher, Callback);
     uv_ref((uv_handle_t*)&thread->async_watcher);
 
@@ -787,6 +894,7 @@ void Init (Handle<Object> target) {
   threadTemplate->Set(String::NewSymbol("eval"), FunctionTemplate::New(Eval));
   threadTemplate->Set(String::NewSymbol("load"), FunctionTemplate::New(Load));
   threadTemplate->Set(String::NewSymbol("emit"), FunctionTemplate::New(processEmit));
+  threadTemplate->Set(String::NewSymbol("emitSerialized"), FunctionTemplate::New(processEmitSerialized));
   threadTemplate->Set(String::NewSymbol("destroy"), FunctionTemplate::New(Destroy));
 
 }

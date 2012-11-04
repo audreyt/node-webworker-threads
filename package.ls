@@ -1,5 +1,5 @@
 name: 'webworker-threads'
-version: '0.3.0'
+version: '0.2.4'
 main: 'build/Release/WebWorkerThreads.node'
 description: 'Lightweight Web Worker API implementation with POSIX threads'
 keywords: [ 'threads' 'web worker' 'a gogo' ]
@@ -11,7 +11,10 @@ homepage: 'https://github.com/audreyt/node-webworker-threads'
 bugs:
   url: 'http://github.com/audreyt/node-webworker-threads/issues'
   email: 'audreyt@audreyt.org'
-license: 'MIT'
+licenses: [
+    { type: "Apache License, Version 2.0", url: "http://www.apache.org/licenses/LICENSE-2.0" }
+    { type: 'MIT', url: "file:LICENSE" }
+]
 repository:
   type: 'git'
   url: 'http://github.com/audreyt/node-webworker-threads.git'

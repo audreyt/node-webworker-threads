@@ -1,3 +1,7 @@
+## 0.2.4
+
+* Switch to BSON instead of JSON for message serialization.
+
 ## 0.2.3
 
 * Add SunOS to supported OSs; tested on Linux.

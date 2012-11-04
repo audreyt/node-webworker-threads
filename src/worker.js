@@ -6,9 +6,9 @@ function Worker(){
     function constructor(code){
       var t, this$ = this;
       this.thread = t = Threads.create();
-      t.on('message', function(json){
+      t.on('message', function(args){
         return typeof this$.onmessage === 'function' ? this$.onmessage({
-          data: JSON.parse(json)
+          data: args
         }) : void 8;
       });
       t.on('close', function(){
@@ -25,12 +25,12 @@ function Worker(){
         }
       };
       this.dispatchEvent = function(event){
-        return t.emit(event.type, JSON.stringify(event));
+        return t.emitSerialized(event.type, event);
       };
       this.postMessage = function(data){
-        return t.emit('message', JSON.stringify({
+        return t.emitSerialized('message', {
           data: data
-        }));
+        });
       };
       if (typeof code === 'function') {
         t.eval("(" + code + ")()");

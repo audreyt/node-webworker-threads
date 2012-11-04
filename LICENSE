@@ -7,6 +7,12 @@ This work is published from Taiwan.
 
 http://creativecommons.org/publicdomain/zero/1.0
 
+# This module includes src/bson.cc and src/bson.h, under the Apache License v2.0:
+
+https://github.com/mongodb/js-bson/
+
+Copyright by Christian Amor Kvalheim and other contributors.
+
 # This module is based on Threads_a_gogo, under the MIT license:
 
 https://github.com/xk/node-threads-a-gogo/blob/2665efb9d1d3cc0934ac2f5b6265b37a684d2e07/package.json#L24

@@ -1,7 +1,7 @@
 {
   "name": "webworker-threads",
-  "version": "0.2.2",
-  "main": "build/release/WebWorkerThreads.node",
+  "version": "0.2.3",
+  "main": "build/Release/WebWorkerThreads.node",
   "description": "Lightweight Web Worker API implementation with POSIX threads",
   "keywords": [
     "threads",
@@ -25,13 +25,14 @@
   },
   "scripts": {
     "prepublish": "livescript -cj package.ls",
-    "compile": "livescript -cj package.ls;\ngcc deps/minifier/src/minify.c -o deps/minifier/bin/minify;\nlivescript -cbp src/load.ls                      > src/load.js;\n./deps/minifier/bin/minify kLoad_js              < src/load.js            > src/load.js.c;\nlivescript -cbp src/worker.ls                    > src/worker.js;\n./deps/minifier/bin/minify kWorker_js            < src/worker.js          > src/worker.js.c;\nlivescript -cbp src/events.ls                    > src/events.js;\n./deps/minifier/bin/minify kEvents_js            < src/events.js          > src/events.js.c;\nlivescript -cbp src/thread_nextTick.ls           > src/thread_nextTick.js;\n./deps/minifier/bin/minify kThread_nextTick_js 1 < src/thread_nextTick.js > src/thread_nextTick.js.c;\nlivescript -cbp src/createPool.ls                > src/createPool.js;\n./deps/minifier/bin/minify kCreatePool_js        < src/createPool.js      > src/createPool.js.c;"
+    "js": "livescript -cj package.ls;\ngcc deps/minifier/src/minify.c -o deps/minifier/bin/minify;\nlivescript -cbp src/load.ls                      > src/load.js;\n./deps/minifier/bin/minify kLoad_js              < src/load.js            > src/load.js.c;\nlivescript -cbp src/worker.ls                    > src/worker.js;\n./deps/minifier/bin/minify kWorker_js            < src/worker.js          > src/worker.js.c;\nlivescript -cbp src/events.ls                    > src/events.js;\n./deps/minifier/bin/minify kEvents_js            < src/events.js          > src/events.js.c;\nlivescript -cbp src/thread_nextTick.ls           > src/thread_nextTick.js;\n./deps/minifier/bin/minify kThread_nextTick_js 1 < src/thread_nextTick.js > src/thread_nextTick.js.c;\nlivescript -cbp src/createPool.ls                > src/createPool.js;\n./deps/minifier/bin/minify kCreatePool_js        < src/createPool.js      > src/createPool.js.c;"
   },
   "gypfile": true,
   "os": [
     "macos",
     "linux",
-    "darwin"
+    "darwin",
+    "sunos"
   ],
   "engines": {
     "node": ">=0.5.1"

@@ -1,6 +1,6 @@
 name: 'webworker-threads'
-version: '0.2.2'
-main: 'build/release/WebWorkerThreads.node'
+version: '0.2.3'
+main: 'build/Release/WebWorkerThreads.node'
 description: 'Lightweight Web Worker API implementation with POSIX threads'
 keywords: [ 'threads' 'web worker' 'a gogo' ]
 author:
@@ -17,7 +17,7 @@ repository:
   url: 'http://github.com/audreyt/node-webworker-threads.git'
 scripts:
   prepublish: 'livescript -cj package.ls'
-  compile: """
+  js: """
     livescript -cj package.ls;
     gcc deps/minifier/src/minify.c -o deps/minifier/bin/minify;
     livescript -cbp src/load.ls                      > src/load.js;
@@ -32,5 +32,5 @@ scripts:
     ./deps/minifier/bin/minify kCreatePool_js        < src/createPool.js      > src/createPool.js.c;
   """
 gypfile: true
-os: [ 'macos' 'linux' 'darwin' ]
+os: <[ macos linux darwin sunos ]>
 engines: { node: '>=0.5.1' }

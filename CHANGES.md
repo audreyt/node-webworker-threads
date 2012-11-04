@@ -1,3 +1,7 @@
+## 0.2.3
+
+* Add SunOS to supported OSs; tested on Linux.
+
 ## 0.2.2
 
 * Allow an empty `new Worker()` constructor.

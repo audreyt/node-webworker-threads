@@ -24,7 +24,6 @@ static int debug_allocs= 0;
 using namespace v8;
 
 static Persistent<String> id_symbol;
-static Persistent<String> require_symbol;
 static Persistent<ObjectTemplate> threadTemplate;
 static bool useLocker;
 
@@ -842,11 +841,6 @@ static Handle<Value> Create (const Arguments &args) {
     thread->JSObject->SetPointerInInternalField(0, thread);
     Local<Value> dispatchEvents= Script::Compile(String::New(kEvents_js))->Run()->ToObject()->CallAsFunction(thread->JSObject, 0, NULL);
     thread->dispatchEvents= Persistent<Object>::New(dispatchEvents->ToObject());
-
-    if (args.Length() > 0) {
-        thread->JSObject->Set(require_symbol, args[0]);
-    }
-
 
     uv_async_init(uv_default_loop(), &thread->async_watcher, Callback);
     uv_ref((uv_handle_t*)&thread->async_watcher);

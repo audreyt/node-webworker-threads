@@ -1,5 +1,5 @@
 name: 'webworker-threads'
-version: '0.2.3'
+version: '0.3.0'
 main: 'build/Release/WebWorkerThreads.node'
 description: 'Lightweight Web Worker API implementation with POSIX threads'
 keywords: [ 'threads' 'web worker' 'a gogo' ]
@@ -16,21 +16,23 @@ repository:
   type: 'git'
   url: 'http://github.com/audreyt/node-webworker-threads.git'
 scripts:
-  prepublish: 'livescript -cj package.ls'
+  prepublish: './node_modules/.bin/livescript -cj package.ls'
   js: """
-    livescript -cj package.ls;
+    ./node_modules/.bin/livescript -cj package.ls;
     gcc deps/minifier/src/minify.c -o deps/minifier/bin/minify;
-    livescript -cbp src/load.ls                      > src/load.js;
+    ./node_modules/.bin/livescript -cbp src/load.ls                      > src/load.js;
     ./deps/minifier/bin/minify kLoad_js              < src/load.js            > src/load.js.c;
-    livescript -cbp src/worker.ls                    > src/worker.js;
+    ./node_modules/.bin/livescript -cbp src/worker.ls                    > src/worker.js;
     ./deps/minifier/bin/minify kWorker_js            < src/worker.js          > src/worker.js.c;
-    livescript -cbp src/events.ls                    > src/events.js;
+    ./node_modules/.bin/livescript -cbp src/events.ls                    > src/events.js;
     ./deps/minifier/bin/minify kEvents_js            < src/events.js          > src/events.js.c;
-    livescript -cbp src/thread_nextTick.ls           > src/thread_nextTick.js;
+    ./node_modules/.bin/livescript -cbp src/thread_nextTick.ls           > src/thread_nextTick.js;
     ./deps/minifier/bin/minify kThread_nextTick_js 1 < src/thread_nextTick.js > src/thread_nextTick.js.c;
-    livescript -cbp src/createPool.ls                > src/createPool.js;
+    ./node_modules/.bin/livescript -cbp src/createPool.ls                > src/createPool.js;
     ./deps/minifier/bin/minify kCreatePool_js        < src/createPool.js      > src/createPool.js.c;
   """
+dev-dependencies:
+  LiveScript: \*
 gypfile: true
 os: <[ macos linux darwin sunos ]>
-engines: { node: '>=0.5.1' }
+engines: { node: '>=0.8.0' }

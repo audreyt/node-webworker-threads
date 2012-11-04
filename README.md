@@ -279,9 +279,9 @@ var worker= new Threads.Worker();
 ##### .addEventListener( type, cb )
 `worker.addEventListener('message', callback)` is equivalent to setting `worker.onmesssage = callback`.
 ##### .dispatchEvent( event )
-Currently unplemented.
+Currently unimplemented.
 ##### .removeEventListener( type )
-Currently unplemented.
+Currently unimplemented.
 ##### .thread
 Returns the underlying `thread` object; see the next section for details.
 Note that this attribute is implementation-specific, and not part of W3C Web Worker API.
@@ -350,7 +350,7 @@ Inside every Worker instance from webworker-threads, there's a global `self` obj
 ##### .dispatchEvent( event )
 `self.dispatchEvent({ type: 'message', data: data })` -> same as `self.postMessage(data)`.
 ##### .removeEventListener( type )
-Currently unplemented.
+Currently unimplemented.
 ##### .thread
 Returns the underlying `thread` object; see the next section for details.
 Note that this attribute is implementation-specific, and not part of W3C Web Worker API.

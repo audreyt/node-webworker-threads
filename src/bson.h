@@ -3,6 +3,10 @@
 #ifndef BSON_H_
 #define BSON_H_
 
+#ifdef __sun
+#include <alloca.h>
+#endif
+
 //===========================================================================
 
 #define USE_MISALIGNED_MEMORY_ACCESS 1

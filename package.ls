@@ -1,5 +1,5 @@
 name: 'webworker-threads'
-version: '0.3.1'
+version: '0.3.2'
 main: 'build/Release/WebWorkerThreads.node'
 description: 'Lightweight Web Worker API implementation with POSIX threads'
 keywords: [ 'threads' 'web worker' 'a gogo' ]

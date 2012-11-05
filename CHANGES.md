@@ -1,3 +1,7 @@
+## 0.3.2
+
+* Fix BSON building on SunOS.
+
 ## 0.3.1
 
 * Switch to BSON instead of JSON for message serialization.

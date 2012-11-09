@@ -1,17 +1,16 @@
+# Same as multiThreadEvented.ls, but with 5 workers
+
 { Worker } = require \webworker-threads
 
 for til 5 => (new Worker ->
-    fibo = (n) ->
-        | n > 1 => fibo(n - 1) + fibo(n - 2)
-        | _     => 1
-    self.onmessage = ({data}) ->
-        self.postMessage fibo(data)
+    fibo = (n) -> if n > 1 then fibo(n - 1) + fibo(n - 2) else 1
+    self.onmessage = ({ data }) -> self.postMessage fibo data
 )
-    ..onmessage = ({data}) ->
-        process.stdout.write "[#{@thread.id}] #data"
-        @postMessage 35
-    ..postMessage 35
+    ..onmessage = ({ data }) ->
+        console.log "[#{ @thread.id }] #data"
+        @postMessage Math.ceil Math.random! * 30
+    ..postMessage Math.ceil Math.random! * 30
 
-do spinForever = ->
-    process.stdout.write \.
-    process.nextTick spinForever
+do spin = ->
+    process.stdout.write '.'
+    process.nextTick spin

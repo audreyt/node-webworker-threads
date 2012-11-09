@@ -30,20 +30,24 @@ static bool useLocker;
 static typeQueue* freeJobsQueue= NULL;
 static typeQueue* freeThreadsQueue= NULL;
 
+#ifndef uv_cond_t
+typedef pthread_cond_t uv_cond_t;
+#endif
+
 #define kThreadMagicCookie 0x99c0ffee
 typedef struct {
   uv_async_t async_watcher; //MUST be the first one
 
   long int id;
-  pthread_t thread;
+  uv_thread_t thread;
   volatile int sigkill;
 
   typeQueue inQueue;  //Jobs to run
   typeQueue outQueue; //Jobs done
 
   volatile int IDLE;
-  pthread_cond_t IDLE_cv;
-  pthread_mutex_t IDLE_mutex;
+  uv_cond_t IDLE_cv;
+  uv_mutex_t IDLE_mutex;
 
   Isolate* isolate;
   Persistent<Context> context;

@@ -1,3 +1,10 @@
+## 0.4.2
+
+### Global Worker API
+
+* Set `onmessage = function(event) { ... }` directly now works
+  as specced. (Previously it required `self.onmessage = ...`.)
+
 ## 0.4.1
 
 ### Global Worker API

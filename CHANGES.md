@@ -1,3 +1,7 @@
+## 0.4.0
+
+* Support for Windows with Node.js 0.9.3+.
+
 ## 0.3.2
 
 * Fix BSON building on SunOS.

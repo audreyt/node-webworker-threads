@@ -4,7 +4,7 @@
 
 for til 5 => (new Worker ->
     fibo = (n) -> if n > 1 then fibo(n - 1) + fibo(n - 2) else 1
-    self.onmessage = ({ data }) -> self.postMessage fibo data
+    @onmessage = ({ data }) -> postMessage fibo data
 )
     ..onmessage = ({ data }) ->
         console.log "[#{ @thread.id }] #data"

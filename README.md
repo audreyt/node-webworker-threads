@@ -22,14 +22,14 @@ var Worker = require('webworker-threads').Worker;
 
 // You may also pass in a function:
 var worker = new Worker(function(){
-    self.postMessage("I'm working before postMessage('ali').");
-    self.onmessage = function(event) {
-          self.postMessage('Hi ' + event.data);
-          self.close();
-    };
+  postMessage("I'm working before postMessage('ali').");
+  onmessage = function(event) {
+    postMessage('Hi ' + event.data);
+    self.close();
+  };
 });
 worker.onmessage = function(event) {
-      console.log("Worker said : " + event.data);
+  console.log("Worker said : " + event.data);
 };
 worker.postMessage('ali');
 ```
@@ -40,13 +40,13 @@ A more involved example in [LiveScript](http://livescript.net/) syntax, with fiv
 { Worker } = require \webworker-threads
 
 for til 5 => (new Worker ->
-    fibo = (n) -> if n > 1 then fibo(n - 1) + fibo(n - 2) else 1
-    self.onmessage = ({ data }) -> self.postMessage fibo data
+  fibo = (n) -> if n > 1 then fibo(n - 1) + fibo(n - 2) else 1
+  @onmessage = ({ data }) -> postMessage fibo data
 )
-    ..onmessage = ({ data }) ->
-        console.log "[#{ @thread.id }] #data"
-        @postMessage Math.ceil Math.random! * 30
-    ..postMessage Math.ceil Math.random! * 30
+  ..onmessage = ({ data }) ->
+    console.log "[#{ @thread.id }] #data"
+    @postMessage Math.ceil Math.random! * 30
+  ..postMessage Math.ceil Math.random! * 30
 
 do spin = -> process.nextTick spin
 ```
@@ -68,8 +68,8 @@ require('http').createServer(function (req,res) {
     function fibo (n) {
       return n > 1 ? fibo(n - 1) + fibo(n - 2) : 1;
     }
-    self.onmessage = function (event) {
-      self.postMessage(fibo(event.data));
+    onmessage = function (event) {
+      postMessage(fibo(event.data));
     }
   });
   fibo.onmessage = function (event) {
@@ -171,19 +171,19 @@ threadPool= Threads.createPool( numberOfThreads );
 Inside every Worker instance from webworker-threads, there's a global `self` object with these properties:
 
 ##### .postMessage( data )
-`self.postMessage({ x: 1, y: 2 })` -> sends a data structure back to the main thread.
+`postMessage({ x: 1, y: 2 })` -> sends a data structure back to the main thread.
 ##### .onmessage
-`self.onmessage = function (event) { ... };` -> receives data from the main thread's `.postMessage` calls.
+`onmessage = function (event) { ... };` -> receives data from the main thread's `.postMessage` calls.
 ##### .close()
-`self.close()` -> stops the current thread.
+`close()` -> stops the current thread.
 ##### .addEventListener( type, cb )
-`self.addEventListener('message', callback)` is equivalent to setting `self.onmesssage = callback`.
+`addEventListener('message', callback)` is equivalent to setting `self.onmesssage = callback`.
 ##### .dispatchEvent( event )
-`self.dispatchEvent({ type: 'message', data: data })` -> same as `self.postMessage(data)`.
+`dispatchEvent({ type: 'message', data: data })` -> same as `self.postMessage(data)`.
 ##### .removeEventListener( type )
 Currently unimplemented.
 ##### .importScripts( file [, file...] )
-Loads one or more files from the disk and `eval` them in the worker instance scope.
+`importScripts('a.js', 'b.js')` -> loads one or more files from the disk and `eval` them in the worker's instance scope.
 ##### .thread
 Returns the underlying `thread` object; see the next section for details.
 Note that this attribute is implementation-specific, and not part of W3C Web Worker API.

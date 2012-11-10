@@ -71,9 +71,9 @@ static void ReportException(TryCatch* try_catch) {
 static Handle<Value> readFileSync_(const Arguments &args) {
 	HandleScope scope;
 
-	FILE *f = fopen(*String::Utf8Value(Handle<String>::Cast(args[0])), "r");
+	FILE *f = fopen(*String::Utf8Value(Handle<String>::Cast(args[0])), "rb");
 	if (f == NULL) {
-		char str[56];
+		char str[256];
 		sprintf(str, "Error: readfile open failed. %d %s\n", errno, strerror(errno));
 		return ThrowException(Exception::Error(String::New(str)));
 	}
@@ -84,7 +84,7 @@ static Handle<Value> readFileSync_(const Arguments &args) {
 	char *buf = (char*)malloc((s+1)*sizeof(char));
 	size_t r = fread(buf, sizeof(char), s, f);
 	if (r < s) {
-		char str[56];
+		char str[256];
 		sprintf(str, "Error: readfile read failed. %d %s\n", ferror(f), strerror(ferror(f)));
 		delete[] buf;
 		fclose(f);

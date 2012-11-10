@@ -7,6 +7,6 @@ w = new Worker ->
             self.postMessage { result: n }
     self.postMessage {+done}
 w.onmessage = (data: {done, result}) ->
-    return @terminate! if done
+    return setTimeout((~> @terminate!), 100ms) if done
     console.log "#result is a prime"
 w.dispatchEvent type: \x data: max: 10000

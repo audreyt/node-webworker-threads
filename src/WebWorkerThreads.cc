@@ -25,6 +25,7 @@ typedef pthread_cond_t uv_cond_t;
 #define pthread_setcanceltype(x,y) NULL
 #endif
 
+
 /*
 static int debug_threads= 0;
 static int debug_allocs= 0;
@@ -32,6 +33,7 @@ static int debug_allocs= 0;
 
 #include "queues_a_gogo.cc"
 #include "bson.cc"
+#include "jslib.cc"
 
 //using namespace node;
 using namespace v8;
@@ -114,7 +116,7 @@ cat ../../../src/thread_nextTick.js | ./minify kThread_nextTick_js > ../../../sr
 */
 
 #include "events.js.c"
-//#include "load.js.c"
+#include "load.js.c"
 #include "createPool.js.c"
 #include "worker.js.c"
 #include "thread_nextTick.js.c"
@@ -251,10 +253,10 @@ static void aThread (void* arg) {
 
 
 
-
-
 static Handle<Value> threadEmit (const Arguments &args);
 static Handle<Value> postMessage (const Arguments &args);
+
+
 
 static void eventLoop (typeThread* thread) {
   thread->isolate->Enter();
@@ -265,7 +267,21 @@ static void eventLoop (typeThread* thread) {
     HandleScope scope1;
 
     Local<Object> global= thread->context->Global();
+
+    Handle<Object> fs_obj = Object::New();
+    JSObjFn(fs_obj, "readFileSync", readFileSync_);
+    global->Set(String::New("native_fs_"), fs_obj, attribute_ro_dd);
+
+    Handle<Object> console_obj = Object::New();
+    JSObjFn(console_obj, "log", console_log);
+    JSObjFn(console_obj, "error", console_error);
+    global->Set(String::New("console"), console_obj, attribute_ro_dd);
+
+    Script::Compile(String::New(kLoad_js))->Run();
+
     global->Set(String::NewSymbol("self"), global);
+    global->Set(String::NewSymbol("global"), global);
+
     global->Set(String::NewSymbol("puts"), FunctionTemplate::New(Puts)->GetFunction());
     global->Set(String::NewSymbol("print"), FunctionTemplate::New(Print)->GetFunction());
 

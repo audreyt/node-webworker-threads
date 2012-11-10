@@ -182,6 +182,8 @@ Inside every Worker instance from webworker-threads, there's a global `self` obj
 `self.dispatchEvent({ type: 'message', data: data })` -> same as `self.postMessage(data)`.
 ##### .removeEventListener( type )
 Currently unimplemented.
+##### .importScripts( file [, file...] )
+Loads one or more files from the disk and `eval` them in the worker instance scope.
 ##### .thread
 Returns the underlying `thread` object; see the next section for details.
 Note that this attribute is implementation-specific, and not part of W3C Web Worker API.

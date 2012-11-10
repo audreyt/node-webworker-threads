@@ -1,5 +1,5 @@
 name: 'webworker-threads'
-version: '0.4.0'
+version: '0.4.1'
 main: 'build/Release/WebWorkerThreads.node'
 description: 'Lightweight Web Worker API implementation with native threads'
 keywords: [ 'threads' 'web worker' 'a gogo' ]
@@ -23,16 +23,16 @@ scripts:
   js: """
     env PATH=./node_modules/.bin:"$PATH" lsc -cj package.ls;
     gcc deps/minifier/src/minify.c -o deps/minifier/bin/minify;
-    env PATH=./node_modules/.bin:"$PATH" lsc -cbp src/load.ls                      > src/load.js;
-    ./deps/minifier/bin/minify kLoad_js              < src/load.js            > src/load.js.c;
     env PATH=./node_modules/.bin:"$PATH" lsc -cbp src/worker.ls                    > src/worker.js;
     ./deps/minifier/bin/minify kWorker_js            < src/worker.js          > src/worker.js.c;
     env PATH=./node_modules/.bin:"$PATH" lsc -cbp src/events.ls                    > src/events.js;
     ./deps/minifier/bin/minify kEvents_js            < src/events.js          > src/events.js.c;
-    env PATH=./node_modules/.bin:"$PATH" lsc -cbp src/thread_nextTick.ls           > src/thread_nextTick.js;
-    ./deps/minifier/bin/minify kThread_nextTick_js 1 < src/thread_nextTick.js > src/thread_nextTick.js.c;
     env PATH=./node_modules/.bin:"$PATH" lsc -cbp src/createPool.ls                > src/createPool.js;
     ./deps/minifier/bin/minify kCreatePool_js        < src/createPool.js      > src/createPool.js.c;
+    env PATH=./node_modules/.bin:"$PATH" lsc -cbp src/thread_nextTick.ls           > src/thread_nextTick.js;
+    ./deps/minifier/bin/minify kThread_nextTick_js 1 < src/thread_nextTick.js > src/thread_nextTick.js.c;
+    env PATH=./node_modules/.bin:"$PATH" lsc -cbp src/load.ls                      > src/load.js;
+    ./deps/minifier/bin/minify kLoad_js 1 1          < src/load.js            > src/load.js.c;
   """
 dev-dependencies:
   LiveScript: \1.1.x

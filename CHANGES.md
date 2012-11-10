@@ -1,3 +1,11 @@
+## 0.4.1
+
+### Global Worker API
+
+* Add `importScripts` for loading on-disk files.
+
+* Add `console.log` and `console.error` from thread.js.
+
 ## 0.4.0
 
 * Support for Windows with Node.js 0.9.3+.

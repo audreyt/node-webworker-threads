@@ -1,3 +1,14 @@
-function load(p, cb){
-  return this.eval(require('fs').readFileSync(p, 'utf8'), cb);
+function addEventListener(event, cb){
+  return this.thread.on(event, cb);
+}
+function close(){
+  return this.thread.emit('close');
+}
+function importScripts(){
+  var i$, len$, p, results$ = [];
+  for (i$ = 0, len$ = arguments.length; i$ < len$; ++i$) {
+    p = arguments[i$];
+    results$.push(self.eval(native_fs_.readFileSync(p, 'utf8')));
+  }
+  return results$;
 }

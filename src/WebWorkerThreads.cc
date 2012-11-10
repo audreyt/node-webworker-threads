@@ -8,9 +8,15 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
-#include <pthread.h>
 #include <stdlib.h>
 #include <string>
+
+#if defined(__unix__) || defined(__POSIX__) || defined(__APPLE__) || defined(_AIX)
+#include <pthread.h>
+#else
+#define pthread_setcancelstate(x,y) NULL
+#define pthread_setcanceltype(x,y) NULL
+#endif
 
 /*
 static int debug_threads= 0;
@@ -31,6 +37,9 @@ static typeQueue* freeJobsQueue= NULL;
 static typeQueue* freeThreadsQueue= NULL;
 
 #ifndef uv_cond_t
+#define uv_cond_signal(x) pthread_cond_signal(x)
+#define uv_cond_init(x) pthread_cond_init(x, NULL)
+#define uv_cond_wait(x,y) pthread_cond_wait(x, y)
 typedef pthread_cond_t uv_cond_t;
 #endif
 
@@ -154,12 +163,12 @@ static typeThread* isAThread (Handle<Object> receiver) {
 
 
 static void pushToInQueue (typeQueueItem* qitem, typeThread* thread) {
-  pthread_mutex_lock(&thread->IDLE_mutex);
+  uv_mutex_lock(&thread->IDLE_mutex);
   queue_push(qitem, &thread->inQueue);
   if (thread->IDLE) {
-    pthread_cond_signal(&thread->IDLE_cv);
+    uv_cond_signal(&thread->IDLE_cv);
   }
-  pthread_mutex_unlock(&thread->IDLE_mutex);
+  uv_mutex_unlock(&thread->IDLE_mutex);
 }
 
 
@@ -392,13 +401,13 @@ static void eventLoop (typeThread* thread) {
       if (nextTickQueueLength || thread->inQueue.length) continue;
       if (thread->sigkill) break;
 
-      pthread_mutex_lock(&thread->IDLE_mutex);
+      uv_mutex_lock(&thread->IDLE_mutex);
       if (!thread->inQueue.length) {
         thread->IDLE= 1;
-        pthread_cond_wait(&thread->IDLE_cv, &thread->IDLE_mutex);
+        uv_cond_wait(&thread->IDLE_cv, &thread->IDLE_mutex);
         thread->IDLE= 0;
       }
-      pthread_mutex_unlock(&thread->IDLE_mutex);
+      uv_mutex_unlock(&thread->IDLE_mutex);
     }
   }
 
@@ -557,11 +566,11 @@ static Handle<Value> Destroy (const Arguments &args) {
   if (!thread->sigkill) {
     //pthread_cancel(thread->thread);
     thread->sigkill= 1;
-    pthread_mutex_lock(&thread->IDLE_mutex);
+    uv_mutex_lock(&thread->IDLE_mutex);
     if (thread->IDLE) {
-      pthread_cond_signal(&thread->IDLE_cv);
+      uv_cond_signal(&thread->IDLE_cv);
     }
-    pthread_mutex_unlock(&thread->IDLE_mutex);
+    uv_mutex_unlock(&thread->IDLE_mutex);
   }
 
   return Undefined();
@@ -849,15 +858,16 @@ static Handle<Value> Create (const Arguments &args) {
     uv_async_init(uv_default_loop(), &thread->async_watcher, Callback);
     uv_ref((uv_handle_t*)&thread->async_watcher);
 
-    pthread_cond_init(&thread->IDLE_cv, NULL);
-    pthread_mutex_init(&thread->IDLE_mutex, NULL);
-    pthread_mutex_init(&thread->inQueue.queueLock, NULL);
-    pthread_mutex_init(&thread->outQueue.queueLock, NULL);
+    uv_cond_init(&thread->IDLE_cv);
+    uv_mutex_init(&thread->IDLE_mutex);
+    uv_mutex_init(&thread->inQueue.queueLock);
+    uv_mutex_init(&thread->outQueue.queueLock);
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     int err= pthread_create(&thread->thread, &attr, aThread, thread);
     pthread_attr_destroy(&attr);
+    // int err= uv_thread_create(&thread->thread, aThread, thread);
     if (err) {
       //Ha habido un error no se ha arrancado esta thread
       destroyaThread(thread);

@@ -48,212 +48,38 @@ for til 5 => (new Worker ->
         @postMessage Math.ceil Math.random! * 30
     ..postMessage Math.ceil Math.random! * 30
 
-do spin = ->
-    process.stdout.write '.'
-    process.nextTick spin
+do spin = -> process.nextTick spin
 ```
 
------------
-WIP WIP WIP
------------
-Note that everything below this line is under construction and subject to change.
------------
-
-## (not so) Quick Intro
+## Introduction
 
 After the initialization phase of a Node program, whose purpose is to setup listeners and callbacks to be executed in response to events, the next phase, the proper execution of the program, is orchestrated by the event loop whose duty is to [juggle events, listeners and callbacks quickly and without any hiccups nor interruptions that would ruin its performance](http://youtube.com/v/D0uA_NOb0PE?autoplay=1)
 
 Both the event loop and said listeners and callbacks run sequentially in a single thread of execution, Node's main thread. If any of them ever blocks, nothing else will happen for the duration of the block: no more events will be handled, no more callbacks nor listeners nor timeouts nor nextTick()ed functions will have the chance to run and do their job, because they won't be called by the blocked event loop, and the program will turn sluggish at best, or appear to be frozen and dead at worst.
 
-**A.-** Here's a program that makes Node's event loop spin freely and as fast as possible: it simply prints a dot to the console in each turn:
+### What is WebWorker-Threads
 
-    cat examples/quickIntro_loop.js
-    
-``` javascript
-(function spinForever () {
-  process.stdout.write(".");
-  process.nextTick(spinForever);
-})();
-```
-
-**B.-** Here's another program that adds to the one above a fibonacci(35) call in each turn, a CPU-bound task that takes quite a while to complete and that blocks the event loop making it spin slowly and clumsily. The point is simply to show that you can't put a job like that in the event loop because Node will stop performing properly when its event loop can't spin fast and freely due to a callback/listener/nextTick()ed function that's blocking.
-
-    cat examples/quickIntro_blocking.js
+`webworker-threads` provides an asynchronous API for CPU-bound tasks that's missing in Node.js:
 
 ``` javascript
-function fibo (n) {
-  return n > 1 ? fibo(n - 1) + fibo(n - 2) : 1;
-}
-
-(function fiboLoop () {
-  process.stdout.write(fibo(35).toString());
-  process.nextTick(fiboLoop);
-})();
-
-(function spinForever () {
-  process.stdout.write(".");
-  process.nextTick(spinForever);
-})();
-```
-
-**C.-** The program below uses `webworker-threads` to run the fibonacci(35) calls in a background thread, so Node's event loop isn't blocked at all and can spin freely again at full speed:
-
-    cat examples/quickIntro_oneThread.js
-  
-``` javascript
-function fibo (n) {
-  return n > 1 ? fibo(n - 1) + fibo(n - 2) : 1;
-}
-
-function cb (err, data) {
-  process.stdout.write(data);
-  this.eval('fibo(35)', cb);
-}
-
-var thread= require('webworker-threads').create();
-
-thread.eval(fibo).eval('fibo(35)', cb);
-
-(function spinForever () {
-  process.stdout.write(".");
-  process.nextTick(spinForever);
-})();
-```
-
-**D.-** This example is almost identical to the one above, only that it creates 5 threads instead of one, each running a fibonacci(35) in parallel and in parallel too with Node's event loop that keeps spinning happily at full speed in its own thread:
-
-    cat examples/quickIntro_fiveThreads.js
-  
-``` javascript
-function fibo (n) {
-  return n > 1 ? fibo(n - 1) + fibo(n - 2) : 1;
-}
-
-function cb (err, data) {
-  process.stdout.write(" ["+ this.id+ "]"+ data);
-  this.eval('fibo(35)', cb);
-}
-
-var Threads= require('webworker-threads');
-
-Threads.create().eval(fibo).eval('fibo(35)', cb);
-Threads.create().eval(fibo).eval('fibo(35)', cb);
-Threads.create().eval(fibo).eval('fibo(35)', cb);
-Threads.create().eval(fibo).eval('fibo(35)', cb);
-Threads.create().eval(fibo).eval('fibo(35)', cb);
-
-(function spinForever () {
-  process.stdout.write(".");
-  process.nextTick(spinForever);
-})();
-```
-
-**E.-** The next one asks `webworker-threads` to create a pool of 10 background threads, instead of creating them manually one by one:
-
-    cat examples/multiThread.js
-
-``` javascript
-function fibo (n) {
-  return n > 1 ? fibo(n - 1) + fibo(n - 2) : 1;
-}
-
-var numThreads= 10;
-var threadPool= require('webworker-threads').createPool(numThreads).all.eval(fibo);
-
-threadPool.all.eval('fibo(35)', function cb (err, data) {
-  process.stdout.write(" ["+ this.id+ "]"+ data);
-  this.eval('fibo(35)', cb);
-});
-
-(function spinForever () {
-  process.stdout.write(".");
-  process.nextTick(spinForever);
-})();
-```
-
-**F.-** This is a demo of the `webworker-threads` eventEmitter API, using one thread:
-
-    cat examples/quickIntro_oneThreadEvented.js
-
-``` javascript
-var thread= require('webworker-threads').create();
-thread.load(__dirname + '/quickIntro_evented_childThreadCode.js');
-
-/*
-  This is the code that's .load()ed into the child/background thread:
-  
-  function fibo (n) {
-    return n > 1 ? fibo(n - 1) + fibo(n - 2) : 1;
-  }
-
-  thread.on('giveMeTheFibo', function onGiveMeTheFibo (data) {
-    this.emit('theFiboIs', fibo(+data)); //Emits 'theFiboIs' in the parent/main thread.
+var Worker = require('webworker-threads').Worker;
+require('http').createServer(function (req,res) {
+  var fibo = new Worker(function() {
+    function fibo (n) {
+      return n > 1 ? fibo(n - 1) + fibo(n - 2) : 1;
+    }
+    self.onmessage = function (event) {
+      self.postMessage(fibo(event.data));
+    }
   });
-  
-*/
-
-//Emit 'giveMeTheFibo' in the child/background thread.
-thread.emit('giveMeTheFibo', 35);
-
-//Listener for the 'theFiboIs' events emitted by the child/background thread.
-thread.on('theFiboIs', function cb (data) {
-  process.stdout.write(data);
-  this.emit('giveMeTheFibo', 35);
-});
-
-(function spinForever () {
-  process.stdout.write(".");
-  process.nextTick(spinForever);
-})();
+  fibo.onmessage = function (event) {
+    res.end('fib(40) = ' + event.data);
+  };
+  fibo.postMessage(40);
+}).listen(port);
 ```
 
-**G.-** This is a demo of the `webworker-threads` eventEmitter API, using a pool of threads:
-
-    cat examples/quickIntro_multiThreadEvented.js
-
-``` javascript
-var numThreads= 10;
-var threadPool= require('webworker-threads').createPool(numThreads);
-threadPool.load(__dirname + '/quickIntro_evented_childThreadCode.js');
-
-/*
-  This is the code that's .load()ed into the child/background threads:
-  
-  function fibo (n) {
-    return n > 1 ? fibo(n - 1) + fibo(n - 2) : 1;
-  }
-
-  thread.on('giveMeTheFibo', function onGiveMeTheFibo (data) {
-    this.emit('theFiboIs', fibo(+data)); //Emits 'theFiboIs' in the parent/main thread.
-  });
-  
-*/
-
-//Emit 'giveMeTheFibo' in all the child/background threads.
-threadPool.all.emit('giveMeTheFibo', 35);
-
-//Listener for the 'theFiboIs' events emitted by the child/background threads.
-threadPool.on('theFiboIs', function cb (data) {
-  process.stdout.write(" ["+ this.id+ "]"+ data);
-  this.emit('giveMeTheFibo', 35);
-});
-
-(function spinForever () {
-  process.stdout.write(".");
-  process.nextTick(spinForever);
-})();
-```
-
-## More examples
-
-The `examples` directory contains a few more examples:
-
-* [ex01_basic](https://github.com/xk/node-threads-a-gogo/blob/master/examples/ex01_basic.md): Running a simple function in a thread.
-* [ex02_events](https://github.com/xk/node-threads-a-gogo/blob/master/examples/ex02_events.md): Sending events from a worker thread.
-* [ex03_ping_pong](https://github.com/xk/node-threads-a-gogo/blob/master/examples/ex03_ping_pong.md): Sending events both ways between the main thread and a worker thread.
-* [ex04_main](https://github.com/xk/node-threads-a-gogo/blob/master/examples/ex04_main.md): Loading the worker code from a file.
-* [ex05_pool](https://github.com/xk/node-threads-a-gogo/blob/master/examples/ex05_pool.md): Using the thread pool.
-* [ex06_jason](https://github.com/xk/node-threads-a-gogo/blob/master/examples/ex06_jason.md): Passing complex objects to threads.
+And it won't block the event loop because for each request, the `fibo` worker will run in parallel in a separate background thread.
 
 ## API
 
@@ -384,6 +210,197 @@ Inside every thread .create()d by webworker-threads, there's a global `puts`:
 ##### puts(arg1 [, arg2 ...])
 `puts(arg1 [, arg2 ...])` -> .toString()s and prints its arguments to stdout.
 
+-----------
+WIP WIP WIP
+-----------
+Note that everything below this line is under construction and subject to change.
+-----------
+
+## Examples
+
+**A.-** Here's a program that makes Node's event loop spin freely and as fast as possible: it simply prints a dot to the console in each turn:
+
+    cat examples/quickIntro_loop.js
+    
+``` javascript
+(function spinForever () {
+  process.nextTick(spinForever);
+})();
+```
+
+**B.-** Here's another program that adds to the one above a fibonacci(35) call in each turn, a CPU-bound task that takes quite a while to complete and that blocks the event loop making it spin slowly and clumsily. The point is simply to show that you can't put a job like that in the event loop because Node will stop performing properly when its event loop can't spin fast and freely due to a callback/listener/nextTick()ed function that's blocking.
+
+    cat examples/quickIntro_blocking.js
+
+``` javascript
+function fibo (n) {
+  return n > 1 ? fibo(n - 1) + fibo(n - 2) : 1;
+}
+
+(function fiboLoop () {
+  process.stdout.write(fibo(35).toString());
+  process.nextTick(fiboLoop);
+})();
+
+(function spinForever () {
+  process.nextTick(spinForever);
+})();
+```
+
+**C.-** The program below uses `webworker-threads` to run the fibonacci(35) calls in a background thread, so Node's event loop isn't blocked at all and can spin freely again at full speed:
+
+    cat examples/quickIntro_oneThread.js
+  
+``` javascript
+function fibo (n) {
+  return n > 1 ? fibo(n - 1) + fibo(n - 2) : 1;
+}
+
+function cb (err, data) {
+  process.stdout.write(data);
+  this.eval('fibo(35)', cb);
+}
+
+var thread= require('webworker-threads').create();
+
+thread.eval(fibo).eval('fibo(35)', cb);
+
+(function spinForever () {
+  process.nextTick(spinForever);
+})();
+```
+
+**D.-** This example is almost identical to the one above, only that it creates 5 threads instead of one, each running a fibonacci(35) in parallel and in parallel too with Node's event loop that keeps spinning happily at full speed in its own thread:
+
+    cat examples/quickIntro_fiveThreads.js
+  
+``` javascript
+function fibo (n) {
+  return n > 1 ? fibo(n - 1) + fibo(n - 2) : 1;
+}
+
+function cb (err, data) {
+  process.stdout.write(" ["+ this.id+ "]"+ data);
+  this.eval('fibo(35)', cb);
+}
+
+var Threads= require('webworker-threads');
+
+Threads.create().eval(fibo).eval('fibo(35)', cb);
+Threads.create().eval(fibo).eval('fibo(35)', cb);
+Threads.create().eval(fibo).eval('fibo(35)', cb);
+Threads.create().eval(fibo).eval('fibo(35)', cb);
+Threads.create().eval(fibo).eval('fibo(35)', cb);
+
+(function spinForever () {
+  process.nextTick(spinForever);
+})();
+```
+
+**E.-** The next one asks `webworker-threads` to create a pool of 10 background threads, instead of creating them manually one by one:
+
+    cat examples/multiThread.js
+
+``` javascript
+function fibo (n) {
+  return n > 1 ? fibo(n - 1) + fibo(n - 2) : 1;
+}
+
+var numThreads= 10;
+var threadPool= require('webworker-threads').createPool(numThreads).all.eval(fibo);
+
+threadPool.all.eval('fibo(35)', function cb (err, data) {
+  process.stdout.write(" ["+ this.id+ "]"+ data);
+  this.eval('fibo(35)', cb);
+});
+
+(function spinForever () {
+  process.nextTick(spinForever);
+})();
+```
+
+**F.-** This is a demo of the `webworker-threads` eventEmitter API, using one thread:
+
+    cat examples/quickIntro_oneThreadEvented.js
+
+``` javascript
+var thread= require('webworker-threads').create();
+thread.load(__dirname + '/quickIntro_evented_childThreadCode.js');
+
+/*
+  This is the code that's .load()ed into the child/background thread:
+  
+  function fibo (n) {
+    return n > 1 ? fibo(n - 1) + fibo(n - 2) : 1;
+  }
+
+  thread.on('giveMeTheFibo', function onGiveMeTheFibo (data) {
+    this.emit('theFiboIs', fibo(+data)); //Emits 'theFiboIs' in the parent/main thread.
+  });
+  
+*/
+
+//Emit 'giveMeTheFibo' in the child/background thread.
+thread.emit('giveMeTheFibo', 35);
+
+//Listener for the 'theFiboIs' events emitted by the child/background thread.
+thread.on('theFiboIs', function cb (data) {
+  process.stdout.write(data);
+  this.emit('giveMeTheFibo', 35);
+});
+
+(function spinForever () {
+  process.nextTick(spinForever);
+})();
+```
+
+**G.-** This is a demo of the `webworker-threads` eventEmitter API, using a pool of threads:
+
+    cat examples/quickIntro_multiThreadEvented.js
+
+``` javascript
+var numThreads= 10;
+var threadPool= require('webworker-threads').createPool(numThreads);
+threadPool.load(__dirname + '/quickIntro_evented_childThreadCode.js');
+
+/*
+  This is the code that's .load()ed into the child/background threads:
+  
+  function fibo (n) {
+    return n > 1 ? fibo(n - 1) + fibo(n - 2) : 1;
+  }
+
+  thread.on('giveMeTheFibo', function onGiveMeTheFibo (data) {
+    this.emit('theFiboIs', fibo(+data)); //Emits 'theFiboIs' in the parent/main thread.
+  });
+  
+*/
+
+//Emit 'giveMeTheFibo' in all the child/background threads.
+threadPool.all.emit('giveMeTheFibo', 35);
+
+//Listener for the 'theFiboIs' events emitted by the child/background threads.
+threadPool.on('theFiboIs', function cb (data) {
+  process.stdout.write(" ["+ this.id+ "]"+ data);
+  this.emit('giveMeTheFibo', 35);
+});
+
+(function spinForever () {
+  process.nextTick(spinForever);
+})();
+```
+
+## More examples
+
+The `examples` directory contains a few more examples:
+
+* [ex01_basic](https://github.com/xk/node-threads-a-gogo/blob/master/examples/ex01_basic.md): Running a simple function in a thread.
+* [ex02_events](https://github.com/xk/node-threads-a-gogo/blob/master/examples/ex02_events.md): Sending events from a worker thread.
+* [ex03_ping_pong](https://github.com/xk/node-threads-a-gogo/blob/master/examples/ex03_ping_pong.md): Sending events both ways between the main thread and a worker thread.
+* [ex04_main](https://github.com/xk/node-threads-a-gogo/blob/master/examples/ex04_main.md): Loading the worker code from a file.
+* [ex05_pool](https://github.com/xk/node-threads-a-gogo/blob/master/examples/ex05_pool.md): Using the thread pool.
+* [ex06_jason](https://github.com/xk/node-threads-a-gogo/blob/master/examples/ex06_jason.md): Passing complex objects to threads.
+
 ## Rationale
 
 [Node.js](http://nodejs.org) is the most awesome, cute and super-sexy piece of free, open source software.
@@ -417,31 +434,6 @@ http.createServer(function cb (req,res) {
 
 You simply can't, because there's no way... well, there wasn't before `webworker-threads`.
 
-### What is Threads A GoGo for Node.js
-
-`webworker-threads` provides the asynchronous API for CPU-bound tasks that's missing in Node.js. Both in continuation passing style (callbacks), and in event emitter style (event listeners).
-
-The same API Node uses to delegate a longish I/O task to a background (libeio) thread:
-
-`asyncIOTask(what, cb);`
-
-`webworker-threads` uses to delegate a longish CPU task to a background (JavaScript) thread:
-
-`thread.eval(program, cb);`
-
-So with `webworker-threads` you can write:
-
-``` javascript
-http.createServer(function (req,res) {
-  thread.eval('fibonacci(40)', function cb (err, data) {
-    res.end(data);
-  });
-}).listen(port);
-```
-
-And it won't block the event loop because the `fibonacci(40)` will run in parallel in a separate background thread.
-
-
 ### Why Threads
 
 Threads (kernel threads) are very interesting creatures. They provide:
@@ -453,7 +445,6 @@ Threads (kernel threads) are very interesting creatures. They provide:
 3.- Threads fully exploit all the available CPU resources in your system. On a loaded system running many tasks in many threads, the more cores there are, the faster the threads will complete. Automatically.
 
 4.- The threads of a process share exactly the same address space, that of the process they belong to. Every thread can access every memory address within the process' address space. This is a very appropriate setup when the threads are actually part of the same job and are actively and closely cooperating with each other. Passing a reference to a chunk of data via a pointer is many orders of magnitude faster than transferring a copy of the data via IPC.
-
 
 ### Why not multiple processes.
 

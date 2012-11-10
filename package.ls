@@ -38,4 +38,4 @@ dev-dependencies:
   LiveScript: \1.1.x
 gypfile: true
 os: <[ macos linux darwin sunos ]>
-engines: { node: '>=0.8.0' }
+engines: { node: '0.8.x' }

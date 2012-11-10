@@ -25,10 +25,5 @@ function ThreadNextTick(){
   }
   thread._ntq = [];
   thread.nextTick = nextTick;
-  Object.defineProperty(self, 'onmessage', {
-    set: function(cb){
-      return this.addEventListener('message', cb);
-    }
-  });
   return dispatchNextTicks;
 }

@@ -16,6 +16,4 @@ function ThreadNextTick
         return 0
     thread._ntq = []
     thread.next-tick = next-tick
-    Object.define-property self, \onmessage do
-        set: (cb) -> @add-event-listener \message cb
     return dispatch-next-ticks

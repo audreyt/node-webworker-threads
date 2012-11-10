@@ -277,8 +277,6 @@ static void eventLoop (typeThread* thread) {
     JSObjFn(console_obj, "error", console_error);
     global->Set(String::New("console"), console_obj, attribute_ro_dd);
 
-    Script::Compile(String::New(kLoad_js))->Run();
-
     global->Set(String::NewSymbol("self"), global);
     global->Set(String::NewSymbol("global"), global);
 
@@ -295,6 +293,8 @@ static void eventLoop (typeThread* thread) {
     Local<Object> dispatchEvents= Script::Compile(String::New(kEvents_js))->Run()->ToObject()->CallAsFunction(threadObject, 0, NULL)->ToObject();
     Local<Object> dispatchNextTicks= Script::Compile(String::New(kThread_nextTick_js))->Run()->ToObject();
     Local<Array> _ntq= (v8::Array*) *threadObject->Get(String::NewSymbol("_ntq"));
+
+    Script::Compile(String::New(kLoad_js))->Run();
 
     double nextTickQueueLength= 0;
     long int ctr= 0;

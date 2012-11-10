@@ -1,3 +1,4 @@
+var onmessage, this$ = this;
 function addEventListener(event, cb){
   return this.thread.on(event, cb);
 }
@@ -12,3 +13,7 @@ function importScripts(){
   }
   return results$;
 }
+onmessage = null;
+thread.on('message', function(args){
+  return typeof onmessage === 'function' ? onmessage(args) : void 8;
+});

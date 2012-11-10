@@ -5,14 +5,21 @@
 #include <v8.h>
 #include <node.h>
 #include <uv.h>
-#include <unistd.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
 
 #if defined(__unix__) || defined(__POSIX__) || defined(__APPLE__) || defined(_AIX)
+#define WWT_PTHREAD 1
 #include <pthread.h>
+#include <unistd.h>
+#ifndef uv_cond_t
+#define uv_cond_signal(x) pthread_cond_signal(x)
+#define uv_cond_init(x) pthread_cond_init(x, NULL)
+#define uv_cond_wait(x,y) pthread_cond_wait(x, y)
+typedef pthread_cond_t uv_cond_t;
+#endif
 #else
 #define pthread_setcancelstate(x,y) NULL
 #define pthread_setcanceltype(x,y) NULL
@@ -35,13 +42,6 @@ static bool useLocker;
 
 static typeQueue* freeJobsQueue= NULL;
 static typeQueue* freeThreadsQueue= NULL;
-
-#ifndef uv_cond_t
-#define uv_cond_signal(x) pthread_cond_signal(x)
-#define uv_cond_init(x) pthread_cond_init(x, NULL)
-#define uv_cond_wait(x,y) pthread_cond_wait(x, y)
-typedef pthread_cond_t uv_cond_t;
-#endif
 
 #define kThreadMagicCookie 0x99c0ffee
 typedef struct {
@@ -214,7 +214,11 @@ static Handle<Value> Print (const Arguments &args) {
 static void eventLoop (typeThread* thread);
 
 // A background thread
+#ifdef WWT_PTHREAD
 static void* aThread (void* arg) {
+#else
+static void aThread (void* arg) {
+#endif
 
   int dummy;
   pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &dummy);
@@ -240,8 +244,9 @@ static void* aThread (void* arg) {
 
   // wake up callback
   if (!(thread->inQueue.length)) uv_async_send(&thread->async_watcher);
-
+#ifdef WWT_PTHREAD
   return NULL;
+#endif
 }
 
 
@@ -862,12 +867,16 @@ static Handle<Value> Create (const Arguments &args) {
     uv_mutex_init(&thread->IDLE_mutex);
     uv_mutex_init(&thread->inQueue.queueLock);
     uv_mutex_init(&thread->outQueue.queueLock);
+
+#ifdef WWT_PTHREAD
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     int err= pthread_create(&thread->thread, &attr, aThread, thread);
     pthread_attr_destroy(&attr);
-    // int err= uv_thread_create(&thread->thread, aThread, thread);
+#else
+    int err= uv_thread_create(&thread->thread, aThread, thread);
+#endif
     if (err) {
       //Ha habido un error no se ha arrancado esta thread
       destroyaThread(thread);

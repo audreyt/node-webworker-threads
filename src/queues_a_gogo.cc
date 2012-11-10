@@ -1,11 +1,13 @@
 //2011-11 Proyectos Equis Ka, s.l., jorge@jorgechamorro.com
 //queues_a_gogo.cc
 
-#include <unistd.h>
 #include <string.h>
 #include <stdio.h>
-#include <pthread.h>
+#include <uv.h>
 #include <stdlib.h>
+#if defined(__unix__) || defined(__POSIX__) || defined(__APPLE__) || defined(_AIX)
+#include <unistd.h>
+#endif
 
 enum types {
   kItemTypeNONE,
@@ -27,7 +29,7 @@ typedef struct typeQueueItem typeQueueItem;
 typedef struct {
   typeQueueItem* first;
   typeQueueItem* last;
-  pthread_mutex_t queueLock;
+  uv_mutex_t queueLock;
   long int id;
   volatile long int length;
 } typeQueue;
@@ -41,7 +43,7 @@ static typeQueue* freeItemsQueue= NULL;
 static void queue_push (typeQueueItem* qitem, typeQueue* queue) {
   qitem->next= NULL;
   
-  pthread_mutex_lock(&queue->queueLock);
+  uv_mutex_lock(&queue->queueLock);
   if (queue->last) {
     queue->last->next= qitem;
   }
@@ -50,7 +52,7 @@ static void queue_push (typeQueueItem* qitem, typeQueue* queue) {
   }
   queue->last= qitem;
   queue->length++;
-  pthread_mutex_unlock(&queue->queueLock);
+  uv_mutex_unlock(&queue->queueLock);
 }
 
 
@@ -59,7 +61,7 @@ static void queue_push (typeQueueItem* qitem, typeQueue* queue) {
 static typeQueueItem* queue_pull (typeQueue* queue) {
   typeQueueItem* qitem;
   
-  pthread_mutex_lock(&queue->queueLock);
+  uv_mutex_lock(&queue->queueLock);
   if ((qitem= queue->first)) {
     if (queue->last == qitem) {
       queue->first= queue->last= NULL;
@@ -70,7 +72,7 @@ static typeQueueItem* queue_pull (typeQueue* queue) {
     queue->length--;
     qitem->next= NULL;
   }
-  pthread_mutex_unlock(&queue->queueLock);
+  uv_mutex_unlock(&queue->queueLock);
   
   return qitem;
 }
@@ -124,7 +126,7 @@ static typeQueue* nuQueue (long int id) {
   }
   else {
     queue= (typeQueue*) calloc(1, sizeof(typeQueue));
-    pthread_mutex_init(&queue->queueLock, NULL);
+    uv_mutex_init(&queue->queueLock);
   }
   
   queue->id= id;

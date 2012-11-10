@@ -11,6 +11,4 @@ for til 5 => (new Worker ->
         @postMessage Math.ceil Math.random! * 30
     ..postMessage Math.ceil Math.random! * 30
 
-do spin = ->
-    process.stdout.write '.'
-    process.nextTick spin
+do spin = -> process.nextTick spin

@@ -5,7 +5,8 @@ w = new Worker ->
             for i from 2 to Math.sqrt n
                 continue search unless n % i
             self.postMessage { result: n }
-w.onmessage = (data: {result}) ->
+    self.postMessage {+done}
+w.onmessage = (data: {done, result}) ->
+    return @terminate! if done
     console.log "#result is a prime"
-    @terminate!
 w.dispatchEvent type: \x data: max: 10000

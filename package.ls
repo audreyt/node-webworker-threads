@@ -19,7 +19,7 @@ repository:
   type: 'git'
   url: 'http://github.com/audreyt/node-webworker-threads.git'
 scripts:
-  prepublish: 'env PATH=./node_modules/.bin:"$PATH" lsc -cj package.ls'
+#  prepublish: 'env PATH=./node_modules/.bin:"$PATH" lsc -cj package.ls'
   js: """
     env PATH=./node_modules/.bin:"$PATH" lsc -cj package.ls;
     gcc deps/minifier/src/minify.c -o deps/minifier/bin/minify;
@@ -37,5 +37,4 @@ scripts:
 dev-dependencies:
   LiveScript: \1.1.x
 gypfile: true
-os: <[ macos linux darwin sunos ]>
-engines: { node: '0.8.x' }
+engines: { node: '>= 0.8.0' }

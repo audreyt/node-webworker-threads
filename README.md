@@ -88,13 +88,13 @@ And it won't block the event loop because for each request, the `fibo` worker wi
 var Threads= require('webworker-threads');
 ```
 ##### .Worker
-`new Threads.Worker( [ file | function ] )` -> Worker object
+`new Threads.Worker( [ file | function ] )` returns a Worker object.
 ##### .create()
-`Threads.create( /* no arguments */ )` -> thread object
+`Threads.create( /* no arguments */ )` returns a thread object.
 ##### .createPool( numThreads )
-`Threads.createPool( numberOfThreads )` -> threadPool object
+`Threads.createPool( numberOfThreads )` returns a threadPool object.
 
-***
+---
 ### Web Worker API
 ``` javascript
 var worker= new Threads.Worker('worker.js');
@@ -102,11 +102,11 @@ var worker= new Threads.Worker(function(){ ... });
 var worker= new Threads.Worker();
 ```
 ##### .postMessage( data )
-`worker.postMessage({ x: 1, y: 2 })` -> sends a data structure into the worker. The worker can reive it using the `onmessage` handler.
+`worker.postMessage({ x: 1, y: 2 })` sends a data structure into the worker. The worker can receive it using the `onmessage` handler.
 ##### .onmessage
-`worker.onmessage = function (event) { console.log(event.data) };` -> receives data from the worker's `.postMessage` calls.
+`worker.onmessage = function (event) { console.log(event.data) };` receives data from the worker's `.postMessage` calls.
 ##### .terminate()
-`worker.terminate()` -> terminates the worker thread.
+`worker.terminate()` terminates the worker thread.
 ##### .addEventListener( type, cb )
 `worker.addEventListener('message', callback)` is equivalent to setting `worker.onmesssage = callback`.
 ##### .dispatchEvent( event )
@@ -117,100 +117,107 @@ Currently unimplemented.
 Returns the underlying `thread` object; see the next section for details.
 Note that this attribute is implementation-specific, and not part of W3C Web Worker API.
 
-***
+---
 ### Thread API
 ``` javascript
 var thread= Threads.create();
 ```
 ##### .id
-`thread.id` -> a sequential thread serial number
+`thread.id` is a sequential thread serial number.
 ##### .load( absolutePath [, cb] )
-`thread.load( absolutePath [, cb] )` -> reads the file at `absolutePath` and `thread.eval(fileContents, cb)`.
+`thread.load( absolutePath [, cb] )` reads the file at `absolutePath` and `thread.eval(fileContents, cb)`.
 ##### .eval( program [, cb])
-`thread.eval( program [, cb])` -> converts `program.toString()` and eval()s it in the thread's global context, and (if provided) returns the completion value to `cb(err, completionValue)`.
+`thread.eval( program [, cb])` converts `program.toString()` and eval()s it in the thread's global context, and (if provided) returns the completion value to `cb(err, completionValue)`.
 ##### .on( eventType, listener )
-`thread.on( eventType, listener )` -> registers the listener `listener(data)` for any events of `eventType` that the thread `thread` may emit.
+`thread.on( eventType, listener )` registers the listener `listener(data)` for any events of `eventType` that the thread `thread` may emit.
 ##### .once( eventType, listener )
-`thread.once( eventType, listener )` -> like `thread.on()`, but the listener will only be called once.
+`thread.once( eventType, listener )` is like `thread.on()`, but the listener will only be called once.
 ##### .removeAllListeners( [eventType] )
-`thread.removeAllListeners( [eventType] )` -> deletes all listeners for all eventTypes. If `eventType` is provided, deletes all listeners only for the event type `eventType`.
+`thread.removeAllListeners( [eventType] )` deletes all listeners for all eventTypes. If `eventType` is provided, deletes all listeners only for the event type `eventType`.
 ##### .emit( eventType, eventData [, eventData ... ] )
-`thread.emit( eventType, eventData [, eventData ... ] )` -> emit an event of `eventType` with `eventData` inside the thread `thread`. All its arguments are .toString()ed.
+`thread.emit( eventType, eventData [, eventData ... ] )` emits an event of `eventType` with `eventData` inside the thread `thread`. All its arguments are .toString()ed.
 ##### .destroy( /* no arguments */ )
-`thread.destroy( /* no arguments */ )` -> destroys the thread.
+`thread.destroy( /* no arguments */ )` destroys the thread.
 
-***
+---
 ### Thread pool API
 ``` javascript
 threadPool= Threads.createPool( numberOfThreads );
 ```
 ##### .load( absolutePath [, cb] )
-`threadPool.load( absolutePath [, cb] )` -> `thread.load( absolutePath [, cb] )` in all the pool's threads.
+`threadPool.load( absolutePath [, cb] )` runs `thread.load( absolutePath [, cb] )` in all the pool's threads.
 ##### .any.eval( program, cb )
-`threadPool.any.eval( program, cb )` -> like `thread.eval()`, but in any of the pool's threads.
+`threadPool.any.eval( program, cb )` is like `thread.eval()`, but in any of the pool's threads.
 ##### .any.emit( eventType, eventData [, eventData ... ] )
-`threadPool.any.emit( eventType, eventData [, eventData ... ] )` -> like `thread.emit()` but in any of the pool's threads.
+`threadPool.any.emit( eventType, eventData [, eventData ... ] )` is like `thread.emit()`, but in any of the pool's threads.
 ##### .all.eval( program, cb )
-`threadPool.all.eval( program, cb )` -> like `thread.eval()`, but in all the pool's threads.
+`threadPool.all.eval( program, cb )` is like `thread.eval()`, but in all the pool's threads.
 ##### .all.emit( eventType, eventData [, eventData ... ] )
-`threadPool.all.emit( eventType, eventData [, eventData ... ] )` -> like `thread.emit()` but in all the pool's threads.
+`threadPool.all.emit( eventType, eventData [, eventData ... ] )` is like `thread.emit()`, but in all the pool's threads.
 ##### .on( eventType, listener )
-`threadPool.on( eventType, listener )` -> like `thread.on()`, registers listeners for events from any of the threads in the pool.
+`threadPool.on( eventType, listener )` is like `thread.on()`, registers listeners for events from any of the threads in the pool.
 ##### .totalThreads()
-`threadPool.totalThreads()` -> returns the number of threads in this pool: as supplied in `.createPool( number )`
+`threadPool.totalThreads()` returns the number of threads in this pool: as supplied in `.createPool( number )`
 ##### .idleThreads()
-`threadPool.idleThreads()` -> returns the number of threads in this pool that are currently idle (sleeping)
+`threadPool.idleThreads()` returns the number of threads in this pool that are currently idle (sleeping)
 ##### .pendingJobs()
-`threadPool.pendingJobs()` -> returns the number of jobs pending.
+`threadPool.pendingJobs()` returns the number of jobs pending.
 ##### .destroy( [ rudely ] )
-`threadPool.destroy( [ rudely ] )` -> waits until `pendingJobs()` is zero and then destroys the pool. If `rudely` is truthy, then it doesn't wait for `pendingJobs === 0`.
+`threadPool.destroy( [ rudely ] )` waits until `pendingJobs()` is zero and then destroys the pool. If `rudely` is truthy, then it doesn't wait for `pendingJobs === 0`.
 
-***
+---
 ### Global Web Worker API
 
 Inside every Worker instance from webworker-threads, there's a global `self` object with these properties:
 
 ##### .postMessage( data )
-`postMessage({ x: 1, y: 2 })` -> sends a data structure back to the main thread.
+`postMessage({ x: 1, y: 2 })` sends a data structure back to the main thread.
 ##### .onmessage
-`onmessage = function (event) { ... };` -> receives data from the main thread's `.postMessage` calls.
+`onmessage = function (event) { ... };` receives data from the main thread's `.postMessage` calls.
 ##### .close()
-`close()` -> stops the current thread.
+`close()` stops the current thread.
 ##### .addEventListener( type, cb )
 `addEventListener('message', callback)` is equivalent to setting `self.onmesssage = callback`.
 ##### .dispatchEvent( event )
-`dispatchEvent({ type: 'message', data: data })` -> same as `self.postMessage(data)`.
+`dispatchEvent({ type: 'message', data: data })` is the same as `self.postMessage(data)`.
 ##### .removeEventListener( type )
 Currently unimplemented.
 ##### .importScripts( file [, file...] )
-`importScripts('a.js', 'b.js')` -> loads one or more files from the disk and `eval` them in the worker's instance scope.
+`importScripts('a.js', 'b.js')` loads one or more files from the disk and `eval()` them in the worker's instance scope.
 ##### .thread
-Returns the underlying `thread` object; see the next section for details.
+The underlying `thread` object; see the next section for details.
 Note that this attribute is implementation-specific, and not part of W3C Web Worker API.
 
-***
-### Global thread API
+---
+### Global Thread API
 
 Inside every thread .create()d by webworker-threads, there's a global `thread` object with these properties:
 ##### .id
-`thread.id` -> the serial number of this thread
+`thread.id` is the serial number of this thread
 ##### .on( eventType, listener )
-`thread.on( eventType, listener )` -> just like `thread.on()` above.
+`thread.on( eventType, listener )` is just like `thread.on()` above.
 ##### .once( eventType, listener )
-`thread.once( eventType, listener )` -> just like `thread.once()` above.
+`thread.once( eventType, listener )` is just like `thread.once()` above.
 ##### .emit( eventType, eventData [, eventData ... ] )
-`thread.emit( eventType, eventData [, eventData ... ] )` -> just like `thread.emit()` above.
+`thread.emit( eventType, eventData [, eventData ... ] )` is just like `thread.emit()` above.
 ##### .removeAllListeners( [eventType] )
-`thread.removeAllListeners( [eventType] )` -> just like `thread.removeAllListeners()` above.
+`thread.removeAllListeners( [eventType] )` is just like `thread.removeAllListeners()` above.
 ##### .nextTick( function )
-`thread.nextTick( function )` -> like `process.nextTick()`, but twice as fast.
+`thread.nextTick( function )` is like `process.nextTick()`, but much faster.
 
-***
-### Global puts
+---
+### Global Helper API
 
-Inside every thread .create()d by webworker-threads, there's a global `puts`:
+Inside every thread .create()d by webworker-threads, there are some helpers:
+
+##### console.log(arg1 [, arg2 ...])
+Same as `console.log` on the main process.
+
+##### console.error(arg1 [, arg2 ...])
+Same as `console.log`, except it prints to stderr.
+
 ##### puts(arg1 [, arg2 ...])
-`puts(arg1 [, arg2 ...])` -> .toString()s and prints its arguments to stdout.
+`puts(arg1 [, arg2 ...])` converts .toString()s and prints its arguments to stdout.
 
 -----------
 WIP WIP WIP

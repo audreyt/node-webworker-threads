@@ -104,7 +104,7 @@ var worker= new Threads.Worker();
 ##### .postMessage( data )
 `worker.postMessage({ x: 1, y: 2 })` sends a data structure into the worker. The worker can receive it using the `onmessage` handler.
 ##### .onmessage
-`worker.onmessage = function (event) { console.log(event.data) };` receives data from the worker's `.postMessage` calls.
+`worker.onmessage = function (event) { console.log(event.data) };` receives data from the worker's `postMessage` calls.
 ##### .terminate()
 `worker.terminate()` terminates the worker thread.
 ##### .addEventListener( type, cb )
@@ -173,7 +173,7 @@ Inside every Worker instance from webworker-threads, there's a global `self` obj
 ##### .postMessage( data )
 `postMessage({ x: 1, y: 2 })` sends a data structure back to the main thread.
 ##### .onmessage
-`onmessage = function (event) { ... };` receives data from the main thread's `.postMessage` calls.
+`onmessage = function (event) { ... }` receives data from the main thread's `.postMessage` calls.
 ##### .close()
 `close()` stops the current thread.
 ##### .addEventListener( type, cb )

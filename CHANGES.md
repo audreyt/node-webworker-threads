@@ -1,6 +1,12 @@
 ## 0.4.3
 
+### Bug Fixes
+
 * Fix Linux compilation issue introduced in 0.4.1. (@dfellis)
+
+* `importScripts` now checks if the files have been read entirely,
+  instead of (potentially) evaluating part of the file in case
+  of filesystem failure.
 
 ## 0.4.2
 

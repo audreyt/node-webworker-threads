@@ -1,3 +1,4 @@
+#!/usr/bin/env lsc
 { Worker } = require \webworker-threads
 w = new Worker ->
     # This also works, but less elegant:

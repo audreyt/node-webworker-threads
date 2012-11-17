@@ -1,3 +1,4 @@
+#!/usr/bin/env lsc
 # Same as multiThreadEvented.ls, but with 5 workers
 
 { Worker } = require \webworker-threads

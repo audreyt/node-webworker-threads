@@ -1,3 +1,7 @@
+## 0.4.3
+
+* Fix Linux compilation issue introduced in 0.4.1. (@dfellis)
+
 ## 0.4.2
 
 ### Global Worker API

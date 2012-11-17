@@ -1,3 +1,4 @@
+#!/usr/bin/env lsc
 # Minimal example for https://npmjs.org/package/webworker-threads
 
 { Worker } = require \webworker-threads

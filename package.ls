@@ -1,6 +1,6 @@
 #!/usr/bin/env lsc -cj
 name: 'webworker-threads'
-version: '0.4.3'
+version: '0.4.4'
 main: 'build/Release/WebWorkerThreads.node'
 description: 'Lightweight Web Worker API implementation with native threads'
 keywords: [ 'threads' 'web worker' 'a gogo' ]

@@ -84,14 +84,11 @@ static Handle<Value> readFileSync_(const Arguments &args) {
 	char *buf = (char*)malloc((s+1)*sizeof(char));
 	size_t r = fread(buf, sizeof(char), s, f);
 	if (r < s) {
-            // Not doing anything for now
-        /*
 		char str[256];
 		sprintf(str, "Error: readfile read failed. %d %s\n", ferror(f), strerror(ferror(f)));
 		delete[] buf;
 		fclose(f);
 		ThrowException(Exception::Error(String::New(str)));
-        */
 	}
 	buf[s] = 0;
 	Handle<String> str = String::New(buf);

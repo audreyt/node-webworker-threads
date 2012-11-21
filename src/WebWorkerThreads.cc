@@ -645,11 +645,12 @@ static char* readFile (Handle<String> path) {
   fseek(fp, 0, SEEK_END);
   size_t len= ftell(fp);
   rewind(fp); //fseek(fp, 0, SEEK_SET);
-  char *buf= (char*) calloc(len + 1, sizeof(char)); // +1 to get null terminated string
-  if (fread(buf, len, 1, fp) < len) {
+  char *buf= (char*)malloc((len+1) * sizeof(char)); // +1 to get null terminated string
+  if (fread(buf, sizeof(char), len, fp) < len) {
     fprintf(stderr, "Error reading the file %s\n", *c_str);
     return NULL;
   }
+  buf[len] = 0;
   fclose(fp);
   /*
   printf("SOURCE:\n%s\n", buf);

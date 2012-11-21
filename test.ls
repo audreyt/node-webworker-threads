@@ -8,7 +8,7 @@ w = new Worker ->
             for i from 2 to Math.sqrt n
                 continue search unless n % i
             postMessage { result: n }
-    postMessage {+done}
+        postMessage {+done}
 w.onmessage = (data: {done, result}) ->
     return setTimeout((~> @terminate!), 100ms) if done
     console.log "#result is a prime"

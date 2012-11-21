@@ -1,3 +1,9 @@
+## 0.4.5
+
+### Bug Fixes
+
+* new Worker("filename.js") was broken on OS X. (@dfellis)
+
 ## 0.4.3
 
 ### Bug Fixes

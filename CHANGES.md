@@ -1,3 +1,9 @@
+## 0.4.6
+
+### Bug Fixes
+
+* Compatibility with Node.js 0.10.
+
 ## 0.4.5
 
 ### Bug Fixes

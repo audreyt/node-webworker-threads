@@ -908,7 +908,11 @@ static Handle<Value> Create (const Arguments &args) {
 }
 
 
+#if NODE_MODULE_VERSION >= 0x000B
+void Init (Handle<Object> target, Handle<Value> module) {
+#else
 void Init (Handle<Object> target) {
+#endif
 
   initQueues();
   freeThreadsQueue= nuQueue(-3);

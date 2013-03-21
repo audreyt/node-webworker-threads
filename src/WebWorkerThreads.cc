@@ -255,6 +255,7 @@ static void aThread (void* arg) {
 
 static Handle<Value> threadEmit (const Arguments &args);
 static Handle<Value> postMessage (const Arguments &args);
+static Handle<Value> postError (const Arguments &args);
 
 
 
@@ -284,6 +285,7 @@ static void eventLoop (typeThread* thread) {
     global->Set(String::NewSymbol("print"), FunctionTemplate::New(Print)->GetFunction());
 
     global->Set(String::NewSymbol("postMessage"), FunctionTemplate::New(postMessage)->GetFunction());
+    global->Set(String::NewSymbol("__postError"), FunctionTemplate::New(postError)->GetFunction());
 
     Local<Object> threadObject= Object::New();
     global->Set(String::NewSymbol("thread"), threadObject);
@@ -773,48 +775,51 @@ static Handle<Value> processEmitSerialized (const Arguments &args) {
   return scope.Close(args.This());
 }
 
+#define POST_EVENT(eventname) { \
+  HandleScope scope; \
+  int len = args.Length(); \
+ \
+  if (!len) return scope.Close(args.This()); \
+ \
+  typeThread* thread= (typeThread*) Isolate::GetCurrent()->GetData(); \
+ \
+  typeQueueItem* qitem= nuJobQueueItem(); \
+  typeJob* job= (typeJob*) qitem->asPtr; \
+ \
+  job->jobType= kJobTypeEventSerialized; \
+  job->typeEventSerialized.eventName= new String::Utf8Value(String::New(eventname)); \
+  job->typeEventSerialized.length= len; \
+ \
+  Local<Array> array= Array::New(len); \
+  int i = 0; do { array->Set(i, args[i]); } while (++i < len); \
+ \
+    { \
+      char* buffer; \
+      BSON *bson = new BSON(); \
+      size_t object_size; \
+      Local<Object> object = bson->GetSerializeObject(array); \
+      BSONSerializer<CountStream> counter(bson, false, false); \
+      counter.SerializeDocument(object); \
+      object_size = counter.GetSerializeSize(); \
+      buffer = (char *)malloc(object_size); \
+      BSONSerializer<DataStream> data(bson, false, false, buffer); \
+      data.SerializeDocument(object); \
+      job->typeEventSerialized.buffer= buffer; \
+      job->typeEventSerialized.bufferSize= object_size; \
+    } \
+ \
+  queue_push(qitem, &thread->outQueue); \
+  if (!(thread->inQueue.length)) uv_async_send(&thread->async_watcher); \
+ \
+  return scope.Close(args.This()); \
+}
 
 static Handle<Value> postMessage (const Arguments &args) {
-  HandleScope scope;
-  int len = args.Length();
+  POST_EVENT("message");
+}
 
-  //fprintf(stdout, "*** threadEmit\n");
-
-  if (!len) return scope.Close(args.This());
-
-  typeThread* thread= (typeThread*) Isolate::GetCurrent()->GetData();
-
-  typeQueueItem* qitem= nuJobQueueItem();
-  typeJob* job= (typeJob*) qitem->asPtr;
-
-  job->jobType= kJobTypeEventSerialized;
-  job->typeEventSerialized.eventName= new String::Utf8Value(String::New("message"));
-  job->typeEventSerialized.length= len;
-
-  Local<Array> array= Array::New(len);
-  int i = 0; do { array->Set(i, args[i]); } while (++i < len);
-
-    {
-      char* buffer;
-      BSON *bson = new BSON();
-      size_t object_size;
-      Local<Object> object = bson->GetSerializeObject(array);
-      BSONSerializer<CountStream> counter(bson, false, false);
-      counter.SerializeDocument(object);
-      object_size = counter.GetSerializeSize();
-      buffer = (char *)malloc(object_size);
-      BSONSerializer<DataStream> data(bson, false, false, buffer);
-      data.SerializeDocument(object);
-      job->typeEventSerialized.buffer= buffer;
-      job->typeEventSerialized.bufferSize= object_size;
-    }
-
-  queue_push(qitem, &thread->outQueue);
-  if (!(thread->inQueue.length)) uv_async_send(&thread->async_watcher); // wake up callback
-
-  //fprintf(stdout, "*** threadEmit END\n");
-
-  return scope.Close(args.This());
+static Handle<Value> postError (const Arguments &args) {
+  POST_EVENT("error");
 }
 
 static Handle<Value> threadEmit (const Arguments &args) {

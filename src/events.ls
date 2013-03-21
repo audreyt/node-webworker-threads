@@ -11,7 +11,7 @@ function DispatchEvents (thread)
             if arguments_.length then delete! thread._on[e] else thread._on = {}
             return thread
         dispatch-events: (event, args, q, i, len) ->
-            if q = thread._on[event]
+            if q = thread._on[event] => try
                 i = 0
                 len = q.length
                 while i < len
@@ -22,6 +22,10 @@ function DispatchEvents (thread)
                     len = q.length
                     while i < len
                         q[i++].apply thread, args
+            catch
+              # e = new Error e unless e instanceof Error
+              # Error.captureStackTrace e
+              __postError e
         _on: {}
     }
     return @dispatch-events

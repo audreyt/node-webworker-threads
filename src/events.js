@@ -22,21 +22,26 @@ function DispatchEvents(thread){
     }
     return thread;
   }, this.dispatchEvents = function(event, args, q, i, len){
-    var results$ = [];
+    var e, results$ = [];
     if (q = thread._on[event]) {
-      i = 0;
-      len = q.length;
-      while (i < len) {
-        q[i++].apply(thread, args);
-      }
-      if (q = q.once) {
-        q.once = undefined;
+      try {
         i = 0;
         len = q.length;
         while (i < len) {
-          results$.push(q[i++].apply(thread, args));
+          q[i++].apply(thread, args);
         }
-        return results$;
+        if (q = q.once) {
+          q.once = undefined;
+          i = 0;
+          len = q.length;
+          while (i < len) {
+            results$.push(q[i++].apply(thread, args));
+          }
+          return results$;
+        }
+      } catch (e$) {
+        e = e$;
+        return __postError(e);
       }
     }
   }, this._on = {}, this);

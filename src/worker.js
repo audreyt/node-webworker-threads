@@ -11,6 +11,11 @@ function Worker(){
           data: args
         }) : void 8;
       });
+      t.on('error', function(args){
+        return typeof this$.onerror === 'function' ? this$.onerror({
+          data: args
+        }) : void 8;
+      });
       t.on('close', function(){
         return t.destroy();
       });

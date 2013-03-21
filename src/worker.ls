@@ -2,6 +2,7 @@ function Worker () => Threads = this; class
     (code) ->
         @thread = t = Threads.create!
         t.on \message (args) ~> @onmessage? data: args
+        t.on \error (args) ~> @onerror? data: args
         t.on \close -> t.destroy!
         @terminate = -> t.destroy!
         @add-event-listener = (event, cb) ~>

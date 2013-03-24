@@ -4,12 +4,17 @@ This is based on @xk (jorgechamorro)'s [Threads A GoGo for Node.js](https://gith
 
 This module provides an asynchronous, evented and/or continuation passing style API for moving blocking/longish CPU-bound tasks out of Node's event loop to JavaScript threads that run in parallel in the background and that use all the available CPU cores automatically; all from within a single Node process.
 
-There is an [illustrated writeup](https://gist.github.com/audreyt/3978463#multi-core-scaling) for the original use case of this module.
-
 On Unix (including Linux and OS X), this module requires Node.js 0.8.0+ and a working node-gyp toolchain, which in turn requires make and C/C++.
 For example, on OS X, you could install XCode from Apple, and then use it to install the command line tools (under Preferences -> Downloads).
 
 On Windows, this module requires Node.js 0.9.3+ and a working [node-gyp toolchain](http://dailyjs.com/2012/05/17/windows-and-node-3/).
+
+## Illustrated Writeup
+
+There is an [illustrated writeup](https://gist.github.com/audreyt/3978463#multi-core-scaling) for the original use case of this module:
+
+<img src="http://www.aosabook.org/svn/posa/raw/ethercalc/scaling-threads.png"
+alt="Event Threaded Server (multi-core)" width="100%">
 
 ## Installing the module
 

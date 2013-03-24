@@ -41,7 +41,11 @@ function DispatchEvents(thread){
         }
       } catch (e$) {
         e = e$;
-        return __postError(e);
+        return __postError({
+          message: e,
+          filename: '',
+          lineno: 0
+        });
       }
     }
   }, this._on = {}, this);

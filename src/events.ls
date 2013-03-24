@@ -23,9 +23,7 @@ function DispatchEvents (thread)
                     while i < len
                         q[i++].apply thread, args
             catch
-              # e = new Error e unless e instanceof Error
-              # Error.captureStackTrace e
-              __postError e
+              __postError { message: e, filename: '', lineno: 0 }
         _on: {}
     }
     return @dispatch-events

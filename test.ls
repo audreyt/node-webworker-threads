@@ -11,8 +11,8 @@ w = new Worker ->
     throw \done
 w.onmessage = (data: {result}) ->
   console.log "#result is a prime"
-w.onerror = ({data}) ->
-  console.log "Caught:", data
-  <~ setTimeout _, 100ms
+w.onerror = ({message}) ->
+  console.log "Caught:", message
+  <~ (setImmediate ? setTimeout _, 100ms)
   @terminate!
 w.postMessage max: 100

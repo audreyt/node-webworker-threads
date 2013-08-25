@@ -3,7 +3,7 @@
     {
       'target_name': 'WebWorkerThreads',
       'sources': [ 'src/WebWorkerThreads.cc' ],
-      'cflags!': [ '-fno-exceptions' ],
+      'cflags!': [ '-fno-exceptions -DV8_USE_UNSAFE_HANDLES' ],
       'cflags_cc!': [ '-fno-exceptions' ],
       'conditions': [
         ['OS=="mac"', {

@@ -1,3 +1,15 @@
+## 0.4.8
+
+### Bug Fixes
+
+* Fix compilation with V8 3.20.x.
+
+## 0.4.7
+
+### Worker API
+
+* Errors during @postMessage are caught and raised in `onerror` handler, as per spec.
+
 ## 0.4.6
 
 ### Bug Fixes

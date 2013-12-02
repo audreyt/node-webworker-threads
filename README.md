@@ -11,9 +11,9 @@ On Windows, this module requires Node.js 0.9.3+ and a working [node-gyp toolchai
 
 ## Illustrated Writeup
 
-There is an [illustrated writeup](https://gist.github.com/audreyt/3978463#multi-core-scaling) for the original use case of this module:
+There is an [illustrated writeup](http://aosabook.org/en/posa/from-socialcalc-to-ethercalc.html#multi-core-scaling) for the original use case of this module:
 
-<img src="http://ethercalc.net/scaling-threads.png" alt="Event Threaded Server (multi-core)" width="100%">
+<img src="http://aosabook.org/en/posa/ethercalc-images/scaling-threads.png" alt="Event Threaded Server (multi-core)" width="100%">
 
 ## Installing the module
 

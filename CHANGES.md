@@ -1,3 +1,10 @@
+## 0.4.9
+
+### Bug Fixes
+
+* Fix compilation on Node 0.8.x (@RemcoTukker).
+* Upgrade LiveScript in devDependencies; no functional changes.
+
 ## 0.4.8
 
 ### Bug Fixes

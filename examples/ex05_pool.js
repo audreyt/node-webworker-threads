@@ -26,7 +26,7 @@ for (var i = 40; i >= 30; i--) {
 	(function(i) {
 		// dispatch each request to the first available thread
 		pool.any.eval('fibo(' + i + ')', function(err, val) {
-			console.log('fibo(' + i + ')=' + i);
+			console.log('fibo(' + i + ')=' + val);
 			// destroy the pool when all results have been produced
 			if (--remain == 0) console.log('bye!'), pool.destroy();
 		});

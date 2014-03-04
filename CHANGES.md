@@ -1,3 +1,7 @@
+## 0.4.11
+
+* Correct a typo in `examples/ex05_pool.js`. (@naderchehab)
+
 ## 0.4.10
 
 ### Bug Fixes

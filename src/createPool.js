@@ -1,5 +1,5 @@
 function createPool(n){
-  var T, pool, idleThreads, q, poolObject, e, RUN, EMIT;
+  var T, pool, idleThreads, q, poolObject, e;
   T = this;
   n = Math.floor(n);
   if (!(n > 0)) {
@@ -38,8 +38,6 @@ function createPool(n){
     throw e;
   }
   return poolObject;
-  RUN = 1;
-  EMIT = 2;
   function poolLoad(path, cb){
     var i;
     i = pool.length;
@@ -51,20 +49,20 @@ function createPool(n){
     var job;
     job = qPull();
     if (job) {
-      if (job.type === RUN) {
+      if (job.type === 1) {
         t.eval(job.srcTextOrEventType, function(e, d){
           var f;
           nextJob(t);
           f = job.cbOrData;
-          if (f) {
-            return job.cbOrData.call(t, e, d);
+          if (typeof f === 'function') {
+            return f.call(t, e, d);
+          } else {
+            return t.emit(job.srcTextOrEventType, f);
           }
         });
-      } else {
-        if (job.type === EMIT) {
-          t.emit(job.srcTextOrEventType, job.cbOrData);
-          nextJob(t);
-        }
+      } else if (job.type === 2) {
+        t.emit(job.srcTextOrEventType, job.cbOrData);
+        nextJob(t);
       }
     } else {
       idleThreads.push(t);
@@ -99,7 +97,7 @@ function createPool(n){
     return job;
   }
   function evalAny(src, cb){
-    qPush(src, cb, RUN);
+    qPush(src, cb, 1);
     if (idleThreads.length) {
       nextJob(idleThreads.pop());
     }
@@ -112,7 +110,7 @@ function createPool(n){
     return poolObject;
   }
   function emitAny(event, data){
-    qPush(event, data, EMIT);
+    qPush(event, data, 2);
     if (idleThreads.length) {
       nextJob(idleThreads.pop());
     }

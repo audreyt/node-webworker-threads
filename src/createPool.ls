@@ -27,9 +27,6 @@ function create-pool (n)
 
     ### Helper Functions Start Here ###
 
-    const RUN = 1
-    const EMIT = 2
-
     function pool-load (path, cb)
         i = pool.length
         while i--
@@ -39,13 +36,15 @@ function create-pool (n)
     function next-job (t)
         job = q-pull!
         if job
-            if job.type is RUN
+            if job.type is 1 # RUN
                 t.eval job.src-text-or-event-type, (e, d) ->
                     next-job t
                     f = job.cb-or-data
-                    job.cb-or-data.call t, e, d if f
-            else
-                if job.type is EMIT
+                    if typeof f is \function
+                      f.call t, e, d
+                    else
+                      t.emit job.src-text-or-event-type, f
+            else if job.type is 2 # EMIT
                     t.emit job.src-text-or-event-type, job.cb-or-data
                     next-job t
         else
@@ -69,7 +68,7 @@ function create-pool (n)
         return job
 
     function eval-any (src, cb)
-        q-push src, cb, RUN
+        q-push src, cb, 1 # RUN
         next-job idle-threads.pop! if idle-threads.length
         return pool-object
 
@@ -78,7 +77,7 @@ function create-pool (n)
         return pool-object
 
     function emit-any (event, data)
-        q-push event, data, EMIT
+        q-push event, data, 2 # EMIT
         next-job idle-threads.pop! if idle-threads.length
         return pool-object
 

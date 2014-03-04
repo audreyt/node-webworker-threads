@@ -1,3 +1,9 @@
+## 0.4.10
+
+### Bug Fixes
+
+* Fix `pool.any.emit`. (@craigwinstanley, Jason Winshell)
+
 ## 0.4.9
 
 ### Bug Fixes

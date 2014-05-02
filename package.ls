@@ -1,6 +1,6 @@
 #!/usr/bin/env lsc -cj
 name: \webworker-threads
-version: \0.4.11
+version: \0.4.12
 main: \build/Release/WebWorkerThreads.node
 description: 'Lightweight Web Worker API implementation with native threads'
 keywords: [ 'threads' 'web worker' 'a gogo' ]
@@ -35,6 +35,8 @@ scripts:
     env PATH=./node_modules/.bin:"$PATH" lsc -cbp src/load.ls                      > src/load.js;
     ./deps/minifier/bin/minify kLoad_js 1 1          < src/load.js            > src/load.js.c;
   """
+dependencies:
+  nan: '>= 0.8.0'
 dev-dependencies:
   LiveScript: \1.2.x
 gypfile: true

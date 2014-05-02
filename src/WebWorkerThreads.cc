@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
+#include "nan.h"
 
 #if defined(__unix__) || defined(__POSIX__) || defined(__APPLE__) || defined(_AIX)
 #define WWT_PTHREAD 1
@@ -393,7 +394,7 @@ static void eventLoop (typeThread* thread) {
           char* data = job->typeEventSerialized.buffer;
           size_t size = job->typeEventSerialized.bufferSize;
           BSONDeserializer deserializer(bson, data, size);
-          Local<Object> result = deserializer.DeserializeDocument()->ToObject();
+          Local<Object> result = deserializer.DeserializeDocument(true)->ToObject();
           int i = 0; do { array->Set(i, result->Get(i)); } while (++i < len);
           free(data);
         }
@@ -558,7 +559,7 @@ static void Callback (uv_async_t *watcher, int revents) {
           char* data = job->typeEventSerialized.buffer;
           size_t size = job->typeEventSerialized.bufferSize;
           BSONDeserializer deserializer(bson, data, size);
-          Local<Object> result = deserializer.DeserializeDocument()->ToObject();
+          Local<Object> result = deserializer.DeserializeDocument(true)->ToObject();
           int i = 0; do { array->Set(i, result->Get(i)); } while (++i < len);
           free(data);
         }

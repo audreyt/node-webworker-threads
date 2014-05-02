@@ -3,17 +3,18 @@
 #ifndef BSON_H_
 #define BSON_H_
 
-#ifdef __sun
-#include <alloca.h>
-#endif
-
 //===========================================================================
 
+#ifdef __arm__
+#define USE_MISALIGNED_MEMORY_ACCESS 0
+#else
 #define USE_MISALIGNED_MEMORY_ACCESS 1
+#endif
 
 #include <node.h>
 #include <node_object_wrap.h>
 #include <v8.h>
+#include "nan.h"
 
 using namespace v8;
 using namespace node;
@@ -48,26 +49,26 @@ enum BsonType
 template<typename T> class BSONSerializer;
 
 class BSON : public ObjectWrap {
-public:    
+public:
 	BSON();
 	~BSON() {}
 
 	static void Initialize(Handle<Object> target);
-	static Handle<Value> BSONDeserializeStream(const Arguments &args);
+        static NAN_METHOD(BSONDeserializeStream);
 
 	// JS based objects
-	static Handle<Value> BSONSerialize(const Arguments &args);
-	static Handle<Value> BSONDeserialize(const Arguments &args);
+	static NAN_METHOD(BSONSerialize);
+	static NAN_METHOD(BSONDeserialize);
 
-	// Calculate size of function
-	static Handle<Value> CalculateObjectSize(const Arguments &args);
-	static Handle<Value> SerializeWithBufferAndIndex(const Arguments &args);
+        // Calculate size of function
+	static NAN_METHOD(CalculateObjectSize);
+	static NAN_METHOD(SerializeWithBufferAndIndex);
 
 	// Constructor used for creating new BSON objects from C++
 	static Persistent<FunctionTemplate> constructor_template;
 
 private:
-	static Handle<Value> New(const Arguments &args);
+	static NAN_METHOD(New);
 	static Handle<Value> deserialize(BSON *bson, char *data, uint32_t dataLength, uint32_t startIndex, bool is_array_item);
 
 	// BSON type instantiate functions
@@ -116,7 +117,7 @@ private:
 	Persistent<String> _codeScopeString;
 	Persistent<String> _toBSONString;
 
-public: Local<Object> GetSerializeObject(const Handle<Value>& object);
+public:	Local<Object> GetSerializeObject(const Handle<Value>& object);
 
 	template<typename T> friend class BSONSerializer;
 	friend class BSONDeserializer;
@@ -234,10 +235,10 @@ public:
 	BSONDeserializer(BSON* aBson, char* data, size_t length);
 	BSONDeserializer(BSONDeserializer& parentSerializer, size_t length);
 
-	Handle<Value> DeserializeDocument();
+	Handle<Value> DeserializeDocument(bool promoteLongs);
 
 	bool			HasMoreData() const { return p < pEnd; }
-	Local<String>	ReadCString();
+	Handle<Value>	ReadCString();
 	uint32_t		ReadIntegerString();
 	int32_t			ReadRegexOptions();
 	Local<String>	ReadString();
@@ -259,10 +260,10 @@ public:
 	size_t			GetSerializeSize() const { return p - pStart; }
 
 private:
-	Handle<Value> DeserializeArray();
-	Handle<Value> DeserializeValue(BsonType type);
-	Handle<Value> DeserializeDocumentInternal();
-	Handle<Value> DeserializeArrayInternal();
+	Handle<Value> DeserializeArray(bool promoteLongs);
+	Handle<Value> DeserializeValue(BsonType type, bool promoteLongs);
+	Handle<Value> DeserializeDocumentInternal(bool promoteLongs);
+	Handle<Value> DeserializeArrayInternal(bool promoteLongs);
 
 	BSON*		bson;
 	char* const pStart;

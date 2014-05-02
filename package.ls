@@ -35,6 +35,8 @@ scripts:
     env PATH=./node_modules/.bin:"$PATH" lsc -cbp src/load.ls                      > src/load.js;
     ./deps/minifier/bin/minify kLoad_js 1 1          < src/load.js            > src/load.js.c;
   """
+dependencies:
+  nan: '>= 0.8.0'
 dev-dependencies:
   LiveScript: \1.2.x
 gypfile: true

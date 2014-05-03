@@ -25,7 +25,7 @@ static const PropertyAttribute attribute_ro_de_dd = (PropertyAttribute)(ReadOnly
 	obj->Set(String::New(name), FunctionTemplate::New(fnname)->GetFunction(), attribute_ro_dd);
 
 static void ReportException(TryCatch* try_catch) {
-	HandleScope scope;
+	NanScope();
 
 	String::Utf8Value exception(try_catch->Exception());
 	Handle<Message> message = try_catch->Message();
@@ -68,14 +68,15 @@ static void ReportException(TryCatch* try_catch) {
 	}
 }
 
-static Handle<Value> readFileSync_(const Arguments &args) {
-	HandleScope scope;
+//static Handle<Value> readFileSync_(const Arguments &args) {
+NAN_METHOD(readFileSync_) {
+	NanScope();
 
 	FILE *f = fopen(*String::Utf8Value(Handle<String>::Cast(args[0])), "rb");
 	if (f == NULL) {
 		char str[256];
 		sprintf(str, "Error: readfile open failed. %d %s\n", errno, strerror(errno));
-		return ThrowException(Exception::Error(String::New(str)));
+		return NanThrowError(String::New(str));
 	}
 	fseek(f, 0, SEEK_END);
 	size_t s = ftell(f);
@@ -95,7 +96,7 @@ static Handle<Value> readFileSync_(const Arguments &args) {
 	free(buf);
 	fclose(f);
 
-	return scope.Close(str);
+	NanReturnValue(str);
 }
 
 
@@ -152,9 +153,11 @@ static inline void console_common_1(const Handle<Value> &v, FILE* fd, const int 
 	}
 }
 
-static inline void console_common(const Arguments &args, FILE* fd) {
+NAN_METHOD(console_log) {
+	NanScope();
+	
 	TryCatch trycatch;
-
+	
 	for (int i=0, n=args.Length(); i<n; ++i) {
 		console_common_1(args[i], stdout, 0);
 	}
@@ -162,16 +165,22 @@ static inline void console_common(const Arguments &args, FILE* fd) {
 	if (trycatch.HasCaught()) {
 		ReportException(&trycatch);
 	}
+	
+	NanReturnUndefined();
 }
 
-static Handle<Value> console_log(const Arguments &args) {
-	HandleScope scope;
-	console_common(args, stdout);
-	return Undefined();
-}
+NAN_METHOD(console_error) {
+	NanScope();
+	
+	TryCatch trycatch;
+	
+	for (int i=0, n=args.Length(); i<n; ++i) {
+		console_common_1(args[i], stderr, 0);
+	}
 
-static Handle<Value> console_error(const Arguments &args) {
-	HandleScope scope;
-	console_common(args, stderr);
-	return Undefined();
+	if (trycatch.HasCaught()) {
+		ReportException(&trycatch);
+	}
+	
+	NanReturnUndefined();
 }

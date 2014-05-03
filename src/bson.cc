@@ -793,7 +793,7 @@ NAN_METHOD(BSON::BSONDeserialize)
 	else
 	{
 		// The length of the data for this encoding
-		ssize_t len = DecodeBytes(args[0], BINARY);
+		intptr_t len = DecodeBytes(args[0], BINARY);
 
 		// Validate that we have at least 5 bytes
 		if(len < 5) return NanThrowError("corrupt bson message < 5 bytes long");
@@ -1038,4 +1038,4 @@ extern "C" void init(Handle<Object> target)
 	BSON::Initialize(target);
 }
 
-NODE_MODULE(bson, BSON::Initialize);
+//NODE_MODULE(bson, BSON::Initialize);

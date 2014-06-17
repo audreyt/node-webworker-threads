@@ -30,7 +30,7 @@ var Worker = require('webworker-threads').Worker;
 // You may also pass in a function:
 var worker = new Worker(function(){
   postMessage("I'm working before postMessage('ali').");
-  onmessage = function(event) {
+  this.onmessage = function(event) {
     postMessage('Hi ' + event.data);
     self.close();
   };
@@ -75,7 +75,7 @@ require('http').createServer(function (req,res) {
     function fibo (n) {
       return n > 1 ? fibo(n - 1) + fibo(n - 2) : 1;
     }
-    onmessage = function (event) {
+    this.onmessage = function (event) {
       postMessage(fibo(event.data));
     }
   });

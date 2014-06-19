@@ -1,6 +1,6 @@
 
 
-var Thread= require('webworker-threads');
+var Thread= require('../');
 
 function cb (e,m) {
   console.log([e,m]);

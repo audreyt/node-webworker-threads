@@ -1,6 +1,6 @@
 
 
-var t= require('webworker-threads');
+var t= require('../');
 
 function killHandler (data) {
   console.log("GOT KILL with data -> "+ data);

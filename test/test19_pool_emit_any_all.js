@@ -1,6 +1,6 @@
 
 
-var T= require('webworker-threads');
+var T= require('../');
 
 var i= process.argv[2] || 1;
 console.log("Creating a pool of "+ i+ " threads");

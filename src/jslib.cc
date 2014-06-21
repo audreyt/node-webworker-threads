@@ -76,7 +76,7 @@ NAN_METHOD(readFileSync_) {
 	if (f == NULL) {
 		char str[256];
 		sprintf(str, "Error: readfile open failed. %d %s\n", errno, strerror(errno));
-		return NanThrowError(String::New(str));
+		return NanThrowError(NanNew<String>(str));
 	}
 	fseek(f, 0, SEEK_END);
 	size_t s = ftell(f);
@@ -89,10 +89,10 @@ NAN_METHOD(readFileSync_) {
 		sprintf(str, "Error: readfile read failed. %d %s\n", ferror(f), strerror(ferror(f)));
 		delete[] buf;
 		fclose(f);
-		ThrowException(Exception::Error(String::New(str)));
+		NanThrowError(str);
 	}
 	buf[s] = 0;
-	Handle<String> str = String::New(buf);
+	Handle<String> str = NanNew<String>(buf);
 	free(buf);
 	fclose(f);
 

@@ -22,7 +22,7 @@
 static const PropertyAttribute attribute_ro_dd = (PropertyAttribute)(ReadOnly | DontDelete);
 static const PropertyAttribute attribute_ro_de_dd = (PropertyAttribute)(ReadOnly | DontEnum | DontDelete);
 #define JSObjFn(obj, name, fnname) \
-	obj->Set(String::New(name), FunctionTemplate::New(fnname)->GetFunction(), attribute_ro_dd);
+	obj->Set(NanNew<String>(name), NanNew<FunctionTemplate>(fnname)->GetFunction(), attribute_ro_dd);
 
 static void ReportException(TryCatch* try_catch) {
 	NanScope();

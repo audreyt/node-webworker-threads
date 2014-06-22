@@ -1,6 +1,6 @@
 
 
-var t= require('webworker-threads');
+var t= require('../');
 
 function eHandler (data) {
   console.log("TEST FAIL");

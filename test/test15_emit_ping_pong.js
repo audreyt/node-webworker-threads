@@ -1,4 +1,4 @@
-var t= require('webworker-threads');
+var t= require('../');
 
 function eventHandler (data) {
   ctr++;

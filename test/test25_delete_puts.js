@@ -4,7 +4,7 @@ If you don't want a thread to have the privilege of writing to stdout, simply de
 
 */
 
-var Threads= require('webworker-threads');
+var Threads= require('../');
 
 function cb (err, msg) {
   if (err) {

@@ -8,7 +8,7 @@ console.log("big.length is "+ big.length);
 
 var i= 0;
 var s= Date.now();
-var o= require('webworker-threads')
+var o= require('../')
   .create()
   .eval(function boot () {
     thread.on('b', function (data) {

@@ -1,6 +1,6 @@
 
 
-var Threads= require('webworker-threads');
+var Threads= require('../');
 
 function A (err, msg) {
   ctrA++;

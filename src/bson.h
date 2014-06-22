@@ -11,11 +11,6 @@
 #define USE_MISALIGNED_MEMORY_ACCESS 1
 #endif
 
-#include <node.h>
-#include <node_object_wrap.h>
-#include <v8.h>
-#include "nan.h"
-
 using namespace v8;
 using namespace node;
 

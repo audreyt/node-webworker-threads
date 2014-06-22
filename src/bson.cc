@@ -196,56 +196,56 @@ template<typename T> void BSONSerializer<T>::SerializeValue(void* typeLocation, 
 	else if(value->IsObject())
 	{
 		const Local<Object>& object = value->ToObject();
-		if(object->Has(NanPersistentToLocal(bson->_bsontypeString)))
+		if(object->Has(NanNew(bson->_bsontypeString)))
 		{
 			const Local<String>& constructorString = object->GetConstructorName();
-			if(NanPersistentToLocal(bson->longString)->StrictEquals(constructorString))
+			if(NanNew(bson->longString)->StrictEquals(constructorString))
 			{
 				this->CommitType(typeLocation, BSON_TYPE_LONG);
-				this->WriteInt32(object, NanPersistentToLocal(bson->_longLowString));
-				this->WriteInt32(object, NanPersistentToLocal(bson->_longHighString));
+				this->WriteInt32(object, NanNew(bson->_longLowString));
+				this->WriteInt32(object, NanNew(bson->_longHighString));
 			}
-			else if(NanPersistentToLocal(bson->timestampString)->StrictEquals(constructorString))
+			else if(NanNew(bson->timestampString)->StrictEquals(constructorString))
 			{
 				this->CommitType(typeLocation, BSON_TYPE_TIMESTAMP);
-				this->WriteInt32(object, NanPersistentToLocal(bson->_longLowString));
-				this->WriteInt32(object, NanPersistentToLocal(bson->_longHighString));
+				this->WriteInt32(object, NanNew(bson->_longLowString));
+				this->WriteInt32(object, NanNew(bson->_longHighString));
 			}
-			else if(NanPersistentToLocal(bson->objectIDString)->StrictEquals(constructorString))
+			else if(NanNew(bson->objectIDString)->StrictEquals(constructorString))
 			{
 				this->CommitType(typeLocation, BSON_TYPE_OID);
-				this->WriteObjectId(object, NanPersistentToLocal(bson->_objectIDidString));
+				this->WriteObjectId(object, NanNew(bson->_objectIDidString));
 			}
-			else if(NanPersistentToLocal(bson->binaryString)->StrictEquals(constructorString))
+			else if(NanNew(bson->binaryString)->StrictEquals(constructorString))
 			{
 				this->CommitType(typeLocation, BSON_TYPE_BINARY);
 
-				uint32_t length = object->Get(NanPersistentToLocal(bson->_binaryPositionString))->Uint32Value();
-				Local<Object> bufferObj = object->Get(NanPersistentToLocal(bson->_binaryBufferString))->ToObject();
+				uint32_t length = object->Get(NanNew(bson->_binaryPositionString))->Uint32Value();
+				Local<Object> bufferObj = object->Get(NanNew(bson->_binaryBufferString))->ToObject();
 
 				this->WriteInt32(length);
-				this->WriteByte(object, NanPersistentToLocal(bson->_binarySubTypeString));	// write subtype
+				this->WriteByte(object, NanNew(bson->_binarySubTypeString));	// write subtype
 				// If type 0x02 write the array length aswell
-				if(object->Get(NanPersistentToLocal(bson->_binarySubTypeString))->Int32Value() == 0x02) {
+				if(object->Get(NanNew(bson->_binarySubTypeString))->Int32Value() == 0x02) {
 					this->WriteInt32(length);
 				}
 				// Write the actual data
 				this->WriteData(Buffer::Data(bufferObj), length);
 			}
-			else if(NanPersistentToLocal(bson->doubleString)->StrictEquals(constructorString))
+			else if(NanNew(bson->doubleString)->StrictEquals(constructorString))
 			{
 				this->CommitType(typeLocation, BSON_TYPE_NUMBER);
-				this->WriteDouble(object, NanPersistentToLocal(bson->_doubleValueString));
+				this->WriteDouble(object, NanNew(bson->_doubleValueString));
 			}
-			else if(NanPersistentToLocal(bson->symbolString)->StrictEquals(constructorString))
+			else if(NanNew(bson->symbolString)->StrictEquals(constructorString))
 			{
 				this->CommitType(typeLocation, BSON_TYPE_SYMBOL);
-				this->WriteLengthPrefixedString(object->Get(NanPersistentToLocal(bson->_symbolValueString))->ToString());
+				this->WriteLengthPrefixedString(object->Get(NanNew(bson->_symbolValueString))->ToString());
 			}
-			else if(NanPersistentToLocal(bson->codeString)->StrictEquals(constructorString))
+			else if(NanNew(bson->codeString)->StrictEquals(constructorString))
 			{
-				const Local<String>& function = object->Get(NanPersistentToLocal(bson->_codeCodeString))->ToString();
-				const Local<Object>& scope = object->Get(NanPersistentToLocal(bson->_codeScopeString))->ToObject();
+				const Local<String>& function = object->Get(NanNew(bson->_codeCodeString))->ToString();
+				const Local<Object>& scope = object->Get(NanNew(bson->_codeScopeString))->ToObject();
 
 				// For Node < 0.6.X use the GetPropertyNames
 	      #if NODE_MAJOR_VERSION == 0 && NODE_MINOR_VERSION < 6
@@ -268,7 +268,7 @@ template<typename T> void BSONSerializer<T>::SerializeValue(void* typeLocation, 
 					this->WriteLengthPrefixedString(function->ToString());
 				}
 			}
-			else if(NanPersistentToLocal(bson->dbrefString)->StrictEquals(constructorString))
+			else if(NanNew(bson->dbrefString)->StrictEquals(constructorString))
 			{
 				this->CommitType(typeLocation, BSON_TYPE_OBJECT);
 
@@ -276,13 +276,13 @@ template<typename T> void BSONSerializer<T>::SerializeValue(void* typeLocation, 
 
 				void* refType = this->BeginWriteType();
 				this->WriteData("$ref", 5);
-				SerializeValue(refType, object->Get(NanPersistentToLocal(bson->_dbRefNamespaceString)));
+				SerializeValue(refType, object->Get(NanNew(bson->_dbRefNamespaceString)));
 
 				void* idType = this->BeginWriteType();
 				this->WriteData("$id", 4);
-				SerializeValue(idType, object->Get(NanPersistentToLocal(bson->_dbRefOidString)));
+				SerializeValue(idType, object->Get(NanNew(bson->_dbRefOidString)));
 
-				const Local<Value>& refDbValue = object->Get(NanPersistentToLocal(bson->_dbRefDbString));
+				const Local<Value>& refDbValue = object->Get(NanNew(bson->_dbRefDbString));
 				if(!refDbValue->IsUndefined())
 				{
 					void* dbType = this->BeginWriteType();
@@ -293,11 +293,11 @@ template<typename T> void BSONSerializer<T>::SerializeValue(void* typeLocation, 
 				this->WriteByte(0);
 				this->CommitSize(dbRefSize);
 			}
-			else if(NanPersistentToLocal(bson->minKeyString)->StrictEquals(constructorString))
+			else if(NanNew(bson->minKeyString)->StrictEquals(constructorString))
 			{
 				this->CommitType(typeLocation, BSON_TYPE_MIN_KEY);
 			}
-			else if(NanPersistentToLocal(bson->maxKeyString)->StrictEquals(constructorString))
+			else if(NanNew(bson->maxKeyString)->StrictEquals(constructorString))
 			{
 				this->CommitType(typeLocation, BSON_TYPE_MAX_KEY);
 			}
@@ -355,9 +355,9 @@ Handle<Value> BSONDeserializer::ReadCString()
 	char* start = p;
 	while(*p++ && (p < pEnd)) { }
 	if(p > pEnd) {
-		return Null();
+		return NanNull();
 	}
-	return String::New(start, (int32_t) (p-start-1) );
+	return NanNew<String>(start, (int32_t) (p-start-1) );
 }
 
 int32_t BSONDeserializer::ReadRegexOptions()
@@ -392,7 +392,7 @@ Local<String> BSONDeserializer::ReadString()
 	uint32_t length = ReadUInt32();
 	char* start = p;
 	p += length;
-	return String::New(start, length-1);
+	return NanNew<String>(start, length-1);
 }
 
 Local<String> BSONDeserializer::ReadObjectId()
@@ -402,7 +402,7 @@ Local<String> BSONDeserializer::ReadObjectId()
 	{
 		objectId[i] = *reinterpret_cast<unsigned char*>(p++);
 	}
-	return String::New(objectId, 12);
+	return NanNew<String>(objectId, 12);
 }
 
 Handle<Value> BSONDeserializer::DeserializeDocument(bool promoteLongs)
@@ -416,7 +416,7 @@ Handle<Value> BSONDeserializer::DeserializeDocument(bool promoteLongs)
 
 Handle<Value> BSONDeserializer::DeserializeDocumentInternal(bool promoteLongs)
 {
-	Local<Object> returnObject = Object::New();
+	Local<Object> returnObject = NanNew<Object>();
 
 	while(HasMoreData())
 	{
@@ -431,10 +431,10 @@ Handle<Value> BSONDeserializer::DeserializeDocumentInternal(bool promoteLongs)
 
 	// From JavaScript:
 	// if(object['$id'] != null) object = new DBRef(object['$ref'], object['$id'], object['$db']);
-	if(returnObject->Has(NanPersistentToLocal(bson->_dbRefIdRefString)))
+	if(returnObject->Has(NanNew(bson->_dbRefIdRefString)))
 	{
-		Local<Value> argv[] = { returnObject->Get(NanPersistentToLocal(bson->_dbRefRefString)), returnObject->Get(NanPersistentToLocal(bson->_dbRefIdRefString)), returnObject->Get(NanPersistentToLocal(bson->_dbRefDbRefString)) };
-		return NanPersistentToLocal(bson->dbrefConstructor)->NewInstance(3, argv);
+		Local<Value> argv[] = { returnObject->Get(NanNew(bson->_dbRefRefString)), returnObject->Get(NanNew(bson->_dbRefIdRefString)), returnObject->Get(NanNew(bson->_dbRefDbRefString)) };
+		return NanNew(bson->dbrefConstructor)->NewInstance(3, argv);
 	}
 	else
 	{
@@ -453,7 +453,7 @@ Handle<Value> BSONDeserializer::DeserializeArray(bool promoteLongs)
 
 Handle<Value> BSONDeserializer::DeserializeArrayInternal(bool promoteLongs)
 {
-	Local<Array> returnArray = Array::New();
+	Local<Array> returnArray = NanNew<Array>();
 
 	while(HasMoreData())
 	{
@@ -475,27 +475,27 @@ Handle<Value> BSONDeserializer::DeserializeValue(BsonType type, bool promoteLong
 		return ReadString();
 
 	case BSON_TYPE_INT:
-		return Integer::New(ReadInt32());
+		return NanNew<Integer>(ReadInt32());
 
 	case BSON_TYPE_NUMBER:
-		return Number::New(ReadDouble());
+		return NanNew<Number>(ReadDouble());
 
 	case BSON_TYPE_NULL:
-		return Null();
+		return NanNull();
 
 	case BSON_TYPE_UNDEFINED:
-		return Undefined();
+		return NanUndefined();
 
 	case BSON_TYPE_TIMESTAMP:
 		{
 			int32_t lowBits = ReadInt32();
 			int32_t highBits = ReadInt32();
-			Local<Value> argv[] = { Int32::New(lowBits), Int32::New(highBits) };
-			return NanPersistentToLocal(bson->timestampConstructor)->NewInstance(2, argv);
+			Local<Value> argv[] = { NanNew<Int32>(lowBits), NanNew<Int32>(highBits) };
+			return NanNew(bson->timestampConstructor)->NewInstance(2, argv);
 		}
 
 	case BSON_TYPE_BOOLEAN:
-		return (ReadByte() != 0) ? True() : False();
+		return (ReadByte() != 0) ? NanTrue() : NanFalse();
 
 	case BSON_TYPE_REGEXP:
 		{
@@ -508,9 +508,9 @@ Handle<Value> BSONDeserializer::DeserializeValue(BsonType type, bool promoteLong
 	case BSON_TYPE_CODE:
 		{
 			const Local<Value>& code = ReadString();
-			const Local<Value>& scope = Object::New();
+			const Local<Value>& scope = NanNew<Object>();
 			Local<Value> argv[] = { code, scope };
-			return NanPersistentToLocal(bson->codeConstructor)->NewInstance(2, argv);
+			return NanNew(bson->codeConstructor)->NewInstance(2, argv);
 		}
 
 	case BSON_TYPE_CODE_W_SCOPE:
@@ -519,13 +519,13 @@ Handle<Value> BSONDeserializer::DeserializeValue(BsonType type, bool promoteLong
 			const Local<Value>& code = ReadString();
 			const Handle<Value>& scope = DeserializeDocument(promoteLongs);
 			Local<Value> argv[] = { code, scope->ToObject() };
-			return NanPersistentToLocal(bson->codeConstructor)->NewInstance(2, argv);
+			return NanNew(bson->codeConstructor)->NewInstance(2, argv);
 		}
 
 	case BSON_TYPE_OID:
 		{
 			Local<Value> argv[] = { ReadObjectId() };
-			return NanPersistentToLocal(bson->objectIDConstructor)->NewInstance(1, argv);
+			return NanNew(bson->objectIDConstructor)->NewInstance(1, argv);
 		}
 
 	case BSON_TYPE_BINARY:
@@ -539,8 +539,8 @@ Handle<Value> BSONDeserializer::DeserializeValue(BsonType type, bool promoteLong
 			Local<Object> buffer = NanNewBufferHandle(p, length);
 			p += length;
 
-			Handle<Value> argv[] = { buffer, Uint32::New(subType) };
-			return NanPersistentToLocal(bson->binaryConstructor)->NewInstance(2, argv);
+			Handle<Value> argv[] = { buffer, NanNew<Uint32>(subType) };
+			return NanNew(bson->binaryConstructor)->NewInstance(2, argv);
 		}
 
 	case BSON_TYPE_LONG:
@@ -557,17 +557,17 @@ Handle<Value> BSONDeserializer::DeserializeValue(BsonType type, bool promoteLong
 					p -= 8;
 					// Read the 64 bit value
 					int64_t finalValue = (int64_t) ReadInt64();
-					return Number::New(finalValue);
+					return NanNew<Number>(finalValue);
 				}
 			}
 
 			// Decode the Long value
-			Local<Value> argv[] = { Int32::New(lowBits), Int32::New(highBits) };
-			return NanPersistentToLocal(bson->longConstructor)->NewInstance(2, argv);
+			Local<Value> argv[] = { NanNew<Int32>(lowBits), NanNew<Int32>(highBits) };
+			return NanNew(bson->longConstructor)->NewInstance(2, argv);
 		}
 
 	case BSON_TYPE_DATE:
-		return Date::New((double) ReadInt64());
+		return NanNew<Date>((double) ReadInt64());
 
 	case BSON_TYPE_ARRAY:
 		return DeserializeArray(promoteLongs);
@@ -579,20 +579,20 @@ Handle<Value> BSONDeserializer::DeserializeValue(BsonType type, bool promoteLong
 		{
 			const Local<String>& string = ReadString();
 			Local<Value> argv[] = { string };
-			return NanPersistentToLocal(bson->symbolConstructor)->NewInstance(1, argv);
+			return NanNew(bson->symbolConstructor)->NewInstance(1, argv);
 		}
 
 	case BSON_TYPE_MIN_KEY:
-		return NanPersistentToLocal(bson->minKeyConstructor)->NewInstance();
+		return NanNew(bson->minKeyConstructor)->NewInstance();
 
 	case BSON_TYPE_MAX_KEY:
-		return NanPersistentToLocal(bson->maxKeyConstructor)->NewInstance();
+		return NanNew(bson->maxKeyConstructor)->NewInstance();
 
 	default:
 		ThrowAllocatedStringException(64, "Unhandled BSON Type: %d", type);
 	}
 
-	return v8::Null();
+	return NanNull();
 }
 
 Persistent<FunctionTemplate> BSON::constructor_template;
@@ -600,35 +600,35 @@ Persistent<FunctionTemplate> BSON::constructor_template;
 BSON::BSON() : ObjectWrap()
 {
 	// Setup pre-allocated comparision objects
-        NanAssignPersistent(String, _bsontypeString, String::New("_bsontype"));
-        NanAssignPersistent(String, _longLowString, String::New("low_"));
-        NanAssignPersistent(String, _longHighString, String::New("high_"));
-        NanAssignPersistent(String, _objectIDidString, String::New("id"));
-        NanAssignPersistent(String, _binaryPositionString, String::New("position"));
-        NanAssignPersistent(String, _binarySubTypeString, String::New("sub_type"));
-        NanAssignPersistent(String, _binaryBufferString, String::New("buffer"));
-        NanAssignPersistent(String, _doubleValueString, String::New("value"));
-        NanAssignPersistent(String, _symbolValueString, String::New("value"));
-        NanAssignPersistent(String, _dbRefRefString, String::New("$ref"));
-        NanAssignPersistent(String, _dbRefIdRefString, String::New("$id"));
-        NanAssignPersistent(String, _dbRefDbRefString, String::New("$db"));
-        NanAssignPersistent(String, _dbRefNamespaceString, String::New("namespace"));
-        NanAssignPersistent(String, _dbRefDbString, String::New("db"));
-        NanAssignPersistent(String, _dbRefOidString, String::New("oid"));
-        NanAssignPersistent(String, _codeCodeString, String::New("code"));
-        NanAssignPersistent(String, _codeScopeString, String::New("scope"));
-        NanAssignPersistent(String, _toBSONString, String::New("toBSON"));
+        NanAssignPersistent(_bsontypeString, NanNew<String>("_bsontype"));
+        NanAssignPersistent(_longLowString, NanNew<String>("low_"));
+        NanAssignPersistent(_longHighString, NanNew<String>("high_"));
+        NanAssignPersistent(_objectIDidString, NanNew<String>("id"));
+        NanAssignPersistent(_binaryPositionString, NanNew<String>("position"));
+        NanAssignPersistent(_binarySubTypeString, NanNew<String>("sub_type"));
+        NanAssignPersistent(_binaryBufferString, NanNew<String>("buffer"));
+        NanAssignPersistent(_doubleValueString, NanNew<String>("value"));
+        NanAssignPersistent(_symbolValueString, NanNew<String>("value"));
+        NanAssignPersistent(_dbRefRefString, NanNew<String>("$ref"));
+        NanAssignPersistent(_dbRefIdRefString, NanNew<String>("$id"));
+        NanAssignPersistent(_dbRefDbRefString, NanNew<String>("$db"));
+        NanAssignPersistent(_dbRefNamespaceString, NanNew<String>("namespace"));
+        NanAssignPersistent(_dbRefDbString, NanNew<String>("db"));
+        NanAssignPersistent(_dbRefOidString, NanNew<String>("oid"));
+        NanAssignPersistent(_codeCodeString, NanNew<String>("code"));
+        NanAssignPersistent(_codeScopeString, NanNew<String>("scope"));
+        NanAssignPersistent(_toBSONString, NanNew<String>("toBSON"));
 
-        NanAssignPersistent(String, longString, String::New("Long"));
-        NanAssignPersistent(String, objectIDString, String::New("ObjectID"));
-        NanAssignPersistent(String, binaryString, String::New("Binary"));
-        NanAssignPersistent(String, codeString, String::New("Code"));
-        NanAssignPersistent(String, dbrefString, String::New("DBRef"));
-        NanAssignPersistent(String, symbolString, String::New("Symbol"));
-        NanAssignPersistent(String, doubleString, String::New("Double"));
-        NanAssignPersistent(String, timestampString, String::New("Timestamp"));
-        NanAssignPersistent(String, minKeyString, String::New("MinKey"));
-        NanAssignPersistent(String, maxKeyString, String::New("MaxKey"));
+        NanAssignPersistent(longString, NanNew<String>("Long"));
+        NanAssignPersistent(objectIDString, NanNew<String>("ObjectID"));
+        NanAssignPersistent(binaryString, NanNew<String>("Binary"));
+        NanAssignPersistent(codeString, NanNew<String>("Code"));
+        NanAssignPersistent(dbrefString, NanNew<String>("DBRef"));
+        NanAssignPersistent(symbolString, NanNew<String>("Symbol"));
+        NanAssignPersistent(doubleString, NanNew<String>("Double"));
+        NanAssignPersistent(timestampString, NanNew<String>("Timestamp"));
+        NanAssignPersistent(minKeyString, NanNew<String>("MinKey"));
+        NanAssignPersistent(maxKeyString, NanNew<String>("MaxKey"));
 }
 
 void BSON::Initialize(v8::Handle<v8::Object> target)
@@ -636,9 +636,9 @@ void BSON::Initialize(v8::Handle<v8::Object> target)
 	// Grab the scope of the call from Node
 	NanScope();
 	// Define a new function template
-	Local<FunctionTemplate> t = FunctionTemplate::New(New);
+	Local<FunctionTemplate> t = NanNew<FunctionTemplate>();
 	t->InstanceTemplate()->SetInternalFieldCount(1);
-	t->SetClassName(String::NewSymbol("BSON"));
+	t->SetClassName(NanNew<String>("BSON"));
 
 	// Instance methods
 	NODE_SET_PROTOTYPE_METHOD(t, "calculateObjectSize", CalculateObjectSize);
@@ -647,9 +647,9 @@ void BSON::Initialize(v8::Handle<v8::Object> target)
 	NODE_SET_PROTOTYPE_METHOD(t, "deserialize", BSONDeserialize);
 	NODE_SET_PROTOTYPE_METHOD(t, "deserializeStream", BSONDeserializeStream);
 
-	NanAssignPersistent(FunctionTemplate, constructor_template, t);
+	NanAssignPersistent(constructor_template, t);
 
-	target->ForceSet(String::NewSymbol("BSON"), t->GetFunction());
+	target->ForceSet(NanNew<String>("BSON"), t->GetFunction());
 }
 
 // Create a new instance of BSON and passing it the existing context
@@ -677,35 +677,35 @@ NAN_METHOD(BSON::New)
 				Local<String> functionName = func->GetName()->ToString();
 
 				// Save the functions making them persistant handles (they don't get collected)
-				if(functionName->StrictEquals(NanPersistentToLocal(bson->longString))) {
-					NanAssignPersistent(Function, bson->longConstructor, func);
+				if(functionName->StrictEquals(NanNew(bson->longString))) {
+					NanAssignPersistent(bson->longConstructor, func);
 					foundClassesMask |= 1;
-				} else if(functionName->StrictEquals(NanPersistentToLocal(bson->objectIDString))) {
-					NanAssignPersistent(Function, bson->objectIDConstructor, func);
+				} else if(functionName->StrictEquals(NanNew(bson->objectIDString))) {
+					NanAssignPersistent(bson->objectIDConstructor, func);
 					foundClassesMask |= 2;
-				} else if(functionName->StrictEquals(NanPersistentToLocal(bson->binaryString))) {
-					NanAssignPersistent(Function, bson->binaryConstructor, func);
+				} else if(functionName->StrictEquals(NanNew(bson->binaryString))) {
+					NanAssignPersistent(bson->binaryConstructor, func);
 					foundClassesMask |= 4;
-				} else if(functionName->StrictEquals(NanPersistentToLocal(bson->codeString))) {
-					NanAssignPersistent(Function, bson->codeConstructor, func);
+				} else if(functionName->StrictEquals(NanNew(bson->codeString))) {
+					NanAssignPersistent(bson->codeConstructor, func);
 					foundClassesMask |= 8;
-				} else if(functionName->StrictEquals(NanPersistentToLocal(bson->dbrefString))) {
-					NanAssignPersistent(Function, bson->dbrefConstructor, func);
+				} else if(functionName->StrictEquals(NanNew(bson->dbrefString))) {
+					NanAssignPersistent(bson->dbrefConstructor, func);
 					foundClassesMask |= 0x10;
-				} else if(functionName->StrictEquals(NanPersistentToLocal(bson->symbolString))) {
-					NanAssignPersistent(Function, bson->symbolConstructor, func);
+				} else if(functionName->StrictEquals(NanNew(bson->symbolString))) {
+					NanAssignPersistent(bson->symbolConstructor, func);
 					foundClassesMask |= 0x20;
-				} else if(functionName->StrictEquals(NanPersistentToLocal(bson->doubleString))) {
-					NanAssignPersistent(Function, bson->doubleConstructor, func);
+				} else if(functionName->StrictEquals(NanNew(bson->doubleString))) {
+					NanAssignPersistent(bson->doubleConstructor, func);
 					foundClassesMask |= 0x40;
-				} else if(functionName->StrictEquals(NanPersistentToLocal(bson->timestampString))) {
-					NanAssignPersistent(Function, bson->timestampConstructor, func);
+				} else if(functionName->StrictEquals(NanNew(bson->timestampString))) {
+					NanAssignPersistent(bson->timestampConstructor, func);
 					foundClassesMask |= 0x80;
-				} else if(functionName->StrictEquals(NanPersistentToLocal(bson->minKeyString))) {
-					NanAssignPersistent(Function, bson->minKeyConstructor, func);
+				} else if(functionName->StrictEquals(NanNew(bson->minKeyString))) {
+					NanAssignPersistent(bson->minKeyConstructor, func);
 					foundClassesMask |= 0x100;
-				} else if(functionName->StrictEquals(NanPersistentToLocal(bson->maxKeyString))) {
-					NanAssignPersistent(Function, bson->maxKeyConstructor, func);
+				} else if(functionName->StrictEquals(NanNew(bson->maxKeyString))) {
+					NanAssignPersistent(bson->maxKeyConstructor, func);
 					foundClassesMask |= 0x200;
 				}
 			}
@@ -750,8 +750,8 @@ NAN_METHOD(BSON::BSONDeserialize)
 	if(args.Length() == 2 && args[1]->IsObject()) {
 		Local<Object> options = args[1]->ToObject();
 
-		if(options->Has(String::New("promoteLongs"))) {
-			promoteLongs = options->Get(String::New("promoteLongs"))->ToBoolean()->Value();
+		if(options->Has(NanNew<String>("promoteLongs"))) {
+			promoteLongs = options->Get(NanNew<String>("promoteLongs"))->ToBoolean()->Value();
 		}
 	}
 
@@ -784,7 +784,7 @@ NAN_METHOD(BSON::BSONDeserialize)
 		}
 		catch(char* exception)
 		{
-			Local<String> error = String::New(exception);
+			Local<String> error = NanNew<String>(exception);
 			free(exception);
 			return NanThrowError(error);
 		}
@@ -793,7 +793,7 @@ NAN_METHOD(BSON::BSONDeserialize)
 	else
 	{
 		// The length of the data for this encoding
-		ssize_t len = DecodeBytes(args[0], BINARY);
+		intptr_t len = DecodeBytes(args[0], BINARY);
 
 		// Validate that we have at least 5 bytes
 		if(len < 5) return NanThrowError("corrupt bson message < 5 bytes long");
@@ -813,7 +813,7 @@ NAN_METHOD(BSON::BSONDeserialize)
 		}
 		catch(char* exception)
 		{
-			Local<String> error = String::New(exception);
+			Local<String> error = NanNew<String>(exception);
 			free(exception);
 			free(data);
 			return NanThrowError(error);
@@ -824,9 +824,9 @@ NAN_METHOD(BSON::BSONDeserialize)
 Local<Object> BSON::GetSerializeObject(const Handle<Value>& argValue)
 {
 	Local<Object> object = argValue->ToObject();
-	if(object->Has(NanPersistentToLocal(_toBSONString)))
+	if(object->Has(NanNew(_toBSONString)))
 	{
-		const Local<Value>& toBSON = object->Get(NanPersistentToLocal(_toBSONString));
+		const Local<Value>& toBSON = object->Get(NanNew(_toBSONString));
 		if(!toBSON->IsFunction()) ThrowAllocatedStringException(64, "toBSON is not a function");
 
 		Local<Value> result = Local<Function>::Cast(toBSON)->Call(object, 0, NULL);
@@ -880,7 +880,7 @@ NAN_METHOD(BSON::BSONSerialize)
 	catch(char *err_msg)
 	{
 		free(serialized_object);
-		Local<String> error = String::New(err_msg);
+		Local<String> error = NanNew<String>(err_msg);
 		free(err_msg);
 		return NanThrowError(error);
 	}
@@ -915,7 +915,7 @@ NAN_METHOD(BSON::CalculateObjectSize)
 	countSerializer.SerializeDocument(args[0]);
 
 	// Return the object size
-	NanReturnValue(Uint32::New((uint32_t) countSerializer.GetSerializeSize()));
+	NanReturnValue(NanNew<Uint32>((uint32_t) countSerializer.GetSerializeSize()));
 }
 
 NAN_METHOD(BSON::SerializeWithBufferAndIndex)
@@ -951,12 +951,12 @@ NAN_METHOD(BSON::SerializeWithBufferAndIndex)
 	}
 	catch(char *exception)
 	{
-		Local<String> error = String::New(exception);
+		Local<String> error = NanNew<String>(exception);
 		free(exception);
                 return NanThrowError(error);
 	}
 
-	NanReturnValue(Uint32::New((uint32_t) (index + object_size - 1)));
+	NanReturnValue(NanNew<Uint32>((uint32_t) (index + object_size - 1)));
 }
 
 NAN_METHOD(BSON::BSONDeserializeStream)
@@ -991,8 +991,8 @@ NAN_METHOD(BSON::BSONDeserializeStream)
 		Local<Object> options = args[5]->ToObject();
 
 		// Check if we have the promoteLong variable
-		if(options->Has(String::New("promoteLongs"))) {
-			promoteLongs = options->Get(String::New("promoteLongs"))->ToBoolean()->Value();
+		if(options->Has(NanNew<String>("promoteLongs"))) {
+			promoteLongs = options->Get(NanNew<String>("promoteLongs"))->ToBoolean()->Value();
 		}
 	}
 
@@ -1021,14 +1021,14 @@ NAN_METHOD(BSON::BSONDeserializeStream)
 		}
 		catch (char* exception)
 		{
-		        Local<String> error = String::New(exception);
+		        Local<String> error = NanNew<String>(exception);
 			free(exception);
 			return NanThrowError(error);
 		}
 	}
 
 	// Return new index of parsing
-	NanReturnValue(Uint32::New((uint32_t) (index + deserializer.GetSerializeSize())));
+	NanReturnValue(NanNew<Uint32>((uint32_t) (index + deserializer.GetSerializeSize())));
 }
 
 // Exporting function
@@ -1038,4 +1038,4 @@ extern "C" void init(Handle<Object> target)
 	BSON::Initialize(target);
 }
 
-NODE_MODULE(bson, BSON::Initialize);
+//NODE_MODULE(bson, BSON::Initialize);

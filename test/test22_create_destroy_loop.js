@@ -1,6 +1,6 @@
 
 
-var T= require('webworker-threads');
+var T= require('../');
 
 
 var i= 0;

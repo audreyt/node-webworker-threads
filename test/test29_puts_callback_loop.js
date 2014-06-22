@@ -1,5 +1,5 @@
 var i= parseInt(process.argv[2], 10) || 2;
-var pool= require('webworker-threads').createPool(i);
+var pool= require('../').createPool(i);
 console.log("Using "+ i+ " threads.");
 
 function ƒ () {

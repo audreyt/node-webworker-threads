@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string>
 #include "nan.h"
+#include "nan_isolate_data_accessor.h"
 
 #if defined(__unix__) || defined(__POSIX__) || defined(__APPLE__) || defined(_AIX)
 #define WWT_PTHREAD 1
@@ -228,24 +229,24 @@ static void aThread (void* arg) {
 
   typeThread* thread= (typeThread*) arg;
   thread->isolate= Isolate::New();
-  thread->isolate->SetData(0, thread);
-
+  NanSetIsolateData(thread->isolate, thread);
+  
   if (useLocker) {
-    //printf("**** USING LOCKER: YES\n");
 	#if (NODE_MODULE_VERSION > 0x000B)
 		v8::Locker myLocker(thread->isolate);
 	#else
 		v8::Locker myLocker(thread->isolate);
 	#endif
+    // I think it's not ok to create a isolate scope here,
+    // because it will call Isolate::Exit automatically.
     //v8::Isolate::Scope isolate_scope(thread->isolate);
     eventLoop(thread);
   }
   else {
-    //printf("**** USING LOCKER: NO\n");
     //v8::Isolate::Scope isolate_scope(thread->isolate);
     eventLoop(thread);
   }
-  thread->isolate->Exit(); 
+  //thread->isolate->Exit(); 
   thread->isolate->Dispose();
   
   // wake up callback
@@ -269,7 +270,8 @@ NAN_METHOD(postError);
 
 
 static void eventLoop (typeThread* thread) {
-  thread->isolate->Enter();
+  Isolate::Scope isolate_scope(thread->isolate);
+  //thread->isolate->Enter();
   
   {
     NanScope();
@@ -462,6 +464,7 @@ static void eventLoop (typeThread* thread) {
 
 
 static void destroyaThread (typeThread* thread) {
+  NanScope();
 
   thread->sigkill= 0;
   //TODO: hay que vaciar las colas y destruir los trabajos antes de ponerlas a NULL
@@ -799,7 +802,7 @@ NAN_METHOD(processEmitSerialized) {
  \
   if (!len) NanReturnValue(args.This()); \
  \
-  typeThread* thread= (typeThread*) Isolate::GetCurrent()->GetData(0); \
+  typeThread* thread= (typeThread*) NanGetIsolateData(Isolate::GetCurrent()); \
  \
   typeQueueItem* qitem= nuJobQueueItem(); \
   typeJob* job= (typeJob*) qitem->asPtr; \
@@ -846,7 +849,7 @@ NAN_METHOD(threadEmit) {
   if (!args.Length()) NanReturnValue(args.This());
 
   int i;
-  typeThread* thread= (typeThread*) Isolate::GetCurrent()->GetData(0);
+  typeThread* thread= (typeThread*) NanGetIsolateData(Isolate::GetCurrent());
 
   typeQueueItem* qitem= nuJobQueueItem();
   typeJob* job= (typeJob*) qitem->asPtr;

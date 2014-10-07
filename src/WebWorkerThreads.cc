@@ -935,11 +935,9 @@ NAN_METHOD(Create) {
 
 #if NODE_MODULE_VERSION >= 0x000E
 void Init (Handle<Object> target, Handle<Value> module, void *) {
-#else
-#if NODE_MODULE_VERSION >= 0x000B
+#elif NODE_MODULE_VERSION >= 0x000B
 void Init (Handle<Object> target, Handle<Value> module) {
 #else
-#endif
 void Init (Handle<Object> target) {
 #endif
 

@@ -196,19 +196,19 @@ NAN_METHOD(Puts) {
 }
 
 NAN_METHOD(Print) {
-  NanScope();
-  int i= 0;
-  while (i < args.Length()) {
-    String::Utf8Value c_str(args[i]);
-    fputs(*c_str, stdout);
-    i++;
-  }
-  static char end = '\n';
-  fputs(&end, stdout);
-  fflush(stdout);
-  
-  //fprintf(stdout, "*** Puts END\n");
-  NanReturnUndefined();
+	NanScope();
+	int i= 0;
+	while (i < args.Length()) {
+		String::Utf8Value c_str(args[i]);
+		fputs(*c_str, stdout);
+		i++;
+	}
+	static char end = '\n';
+	fputs(&end, stdout);
+	fflush(stdout);
+	
+	//fprintf(stdout, "*** Puts END\n");
+	NanReturnUndefined();
 }
 
 
@@ -232,11 +232,11 @@ static void aThread (void* arg) {
   NanSetIsolateData(thread->isolate, thread);
   
   if (useLocker) {
-  #if (NODE_MODULE_VERSION > 0x000B)
-    v8::Locker myLocker(thread->isolate);
-  #else
-    v8::Locker myLocker(thread->isolate);
-  #endif
+	#if (NODE_MODULE_VERSION > 0x000B)
+		v8::Locker myLocker(thread->isolate);
+	#else
+		v8::Locker myLocker(thread->isolate);
+	#endif
     // I think it's not ok to create a isolate scope here,
     // because it will call Isolate::Exit automatically.
     //v8::Isolate::Scope isolate_scope(thread->isolate);
@@ -275,14 +275,15 @@ static void eventLoop (typeThread* thread) {
   
   {
     NanScope();
-  
-  //Local<FunctionTemplate> ftmpl = NanNew<FunctionTemplate>();
-  //Local<ObjectTemplate> otmpl = ftmpl->InstanceTemplate();
-  Local<Context> ctx =  NanNew<Context>();
+    ExtensionConfiguration extensions(0, NULL);
+	
+	Local<FunctionTemplate> ftmpl = NanNew<FunctionTemplate>();
+	Local<ObjectTemplate> otmpl = ftmpl->InstanceTemplate();
+	Local<Context> ctx =  NanNew<Context>(&extensions, otmpl);
 
-  //thread->context= Context::New();
-  NanAssignPersistent(thread->context, ctx);
-  ctx->Enter();
+	//thread->context= Context::New();
+	NanAssignPersistent(thread->context, ctx);
+	ctx->Enter();
 
 
     Local<Object> global= NanNew(thread->context)->Global();
@@ -313,8 +314,8 @@ static void eventLoop (typeThread* thread) {
     Local<Object> dispatchEvents= Script::Compile(NanNew<String>(kEvents_js))->Run()->ToObject()->CallAsFunction(threadObject, 0, NULL)->ToObject();
     Local<Object> dispatchNextTicks= Script::Compile(NanNew<String>(kThread_nextTick_js))->Run()->ToObject();
     //Local<Array> _ntq= (v8::Array*) *threadObject->Get(NanNew<String>Symbol("_ntq"));
-  //Local<Array> _ntq = Array::Cast(*threadObject->Get(NanNew<String>("_ntq")));
-  Array* _ntq = Array::Cast(*threadObject->Get(NanNew<String>("_ntq")));
+	//Local<Array> _ntq = Array::Cast(*threadObject->Get(NanNew<String>("_ntq")));
+	Array* _ntq = Array::Cast(*threadObject->Get(NanNew<String>("_ntq")));
 
     Script::Compile(NanNew<String>(kLoad_js))->Run();
 
@@ -342,7 +343,7 @@ static void eventLoop (typeThread* thread) {
 
           if ((++ctr) > 2e3) {
             ctr= 0;
-            //V8::IdleNotification();
+            NanIdleNotification(1);
 
           }
 
@@ -428,7 +429,7 @@ static void eventLoop (typeThread* thread) {
 
           if ((++ctr) > 2e3) {
             ctr= 0;
-            //V8::IdleNotification();
+            NanIdleNotification(1);
           }
 
           resultado= dispatchNextTicks->CallAsFunction(global, 0, NULL);
@@ -453,7 +454,7 @@ static void eventLoop (typeThread* thread) {
       }
       uv_mutex_unlock(&thread->IDLE_mutex);
     }
-  
+	
   }
 
   NanDisposePersistent(thread->context);
@@ -646,7 +647,7 @@ NAN_METHOD(Eval){
   job->typeEval.tiene_callBack= ((args.Length() > 1) && (args[1]->IsFunction()));
   if (job->typeEval.tiene_callBack) {
     Local<Object> local_cb = args[1]->ToObject();
-  NanAssignPersistent(job->cb, local_cb);
+	NanAssignPersistent(job->cb, local_cb);
   }
   job->typeEval.scriptText_StringObject= new String::Utf8Value(args[0]);
   job->typeEval.useStringObject= 1;
@@ -712,7 +713,7 @@ NAN_METHOD(Load) {
   job->typeEval.tiene_callBack= ((args.Length() > 1) && (args[1]->IsFunction()));
   if (job->typeEval.tiene_callBack) {
     Local<Object> local_cb = args[1]->ToObject();
-  NanAssignPersistent(job->cb, local_cb);
+	NanAssignPersistent(job->cb, local_cb);
   }
   job->typeEval.scriptText_CharPtr= source;
   job->typeEval.useStringObject= 0;
@@ -899,12 +900,12 @@ NAN_METHOD(Create) {
 
     Local<Object> local_JSObject = NanNew(threadTemplate)->NewInstance();
     local_JSObject->Set(NanNew(id_symbol), NanNew<Integer>((int32_t)thread->id));
-  NanSetInternalFieldPointer(local_JSObject, 0, thread);
-  NanAssignPersistent(thread->JSObject, local_JSObject);
-  
+	NanSetInternalFieldPointer(local_JSObject, 0, thread);
+	NanAssignPersistent(thread->JSObject, local_JSObject);
+	
     Local<Value> dispatchEvents= Script::Compile(NanNew<String>(kEvents_js))->Run()->ToObject()->CallAsFunction(local_JSObject, 0, NULL);
-  Local<Object> local_dispatchEvents = dispatchEvents->ToObject();
-  NanAssignPersistent(thread->dispatchEvents, local_dispatchEvents);
+	Local<Object> local_dispatchEvents = dispatchEvents->ToObject();
+	NanAssignPersistent(thread->dispatchEvents, local_dispatchEvents);
 
     uv_async_init(uv_default_loop(), &thread->async_watcher, reinterpret_cast<uv_async_cb>(Callback));
     uv_ref((uv_handle_t*)&thread->async_watcher);

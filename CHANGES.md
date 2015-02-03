@@ -1,3 +1,9 @@
+## 0.5.5
+
+## Compatibility
+
+* Proper support for Node 0.11.x. (@gitawego)
+
 ## 0.4.11
 
 * Correct a typo in `examples/ex05_pool.js`. (@naderchehab)

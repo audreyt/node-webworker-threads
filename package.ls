@@ -1,6 +1,6 @@
 #!/usr/bin/env lsc -cj
 name: \webworker-threads
-version: \0.5.4
+version: \0.5.5
 main: \build/Release/WebWorkerThreads.node
 description: 'Lightweight Web Worker API implementation with native threads'
 keywords: [ 'threads' 'web worker' 'a gogo' ]
@@ -36,8 +36,8 @@ scripts:
     ./deps/minifier/bin/minify kLoad_js 1 1          < src/load.js            > src/load.js.c;
   """
 dependencies:
-  nan: \1.4.x
+  nan: \1.6.x
 dev-dependencies:
-  LiveScript: \1.2.x
+  LiveScript: \1.3.x
 gypfile: true
 engines: { node: '>= 0.8.0' }

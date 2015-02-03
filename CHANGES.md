@@ -2,7 +2,7 @@
 
 ## Compatibility
 
-* Proper support for Node 0.11.x. (@gitawego)
+* Proper support for Node 0.11.x. (@caasi, @senditu, @gitawego)
 
 ## 0.4.11
 

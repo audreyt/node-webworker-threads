@@ -1,3 +1,15 @@
+## 0.5.7
+
+## Compatibility
+
+* Support for io.js-3.3.1. (@marcominetti)
+
+## 0.5.6
+
+## Compatibility
+
+* Support for io.js-2.0.0. (@heavyk)
+
 ## 0.5.5
 
 ## Compatibility

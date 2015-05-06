@@ -931,7 +931,7 @@ NAN_METHOD(Create) {
     }
 
     NanAdjustExternalMemory(sizeof(typeThread));
-    NanReturnValue(thread->JSObject);
+    NanReturnValue(NanNew(thread->JSObject));
 }
 
 

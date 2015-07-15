@@ -35,8 +35,25 @@ enum BsonType
 	BSON_TYPE_INT			= 16,
 	BSON_TYPE_TIMESTAMP		= 17,
 	BSON_TYPE_LONG			= 18,
+	BSON_TYPE_TYPED_ARRAY		= 19,
 	BSON_TYPE_MAX_KEY		= 0x7f,
 	BSON_TYPE_MIN_KEY		= 0xff
+};
+
+enum TypedArrayType
+{
+  TYPED_ARRAY_INT8 = 1,
+  TYPED_ARRAY_UINT8 = 2,
+  TYPED_ARRAY_UINT8_CLAMPED = 3,
+
+  TYPED_ARRAY_INT16 = 4,
+  TYPED_ARRAY_UINT16 = 5,
+
+  TYPED_ARRAY_INT32 = 6,
+  TYPED_ARRAY_UINT32 = 7,
+
+  TYPED_ARRAY_FLOAT32 = 8,
+  TYPED_ARRAY_FLOAT64 = 9,
 };
 
 //===========================================================================

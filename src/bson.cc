@@ -135,6 +135,62 @@ template<typename T> void BSONSerializer<T>::SerializeArray(const Handle<Value>&
 	this->CommitSize(documentSize);
 }
 
+TypedArrayType getTypedArrayType(Local<Value> value) {
+	if (value->IsUint8Array()) { return TYPED_ARRAY_UINT8; }
+	else if (value->IsUint8ClampedArray()) { return TYPED_ARRAY_UINT8_CLAMPED; }
+	else if (value->IsInt8Array()) { return TYPED_ARRAY_INT8; }
+	else if (value->IsUint16Array()) { return TYPED_ARRAY_UINT16; }
+	else if (value->IsInt16Array()) { return TYPED_ARRAY_INT16; }
+	else if (value->IsUint32Array()) { return TYPED_ARRAY_UINT32; }
+	else if (value->IsInt32Array()) { return TYPED_ARRAY_INT32; }
+	else if (value->IsFloat32Array()) { return TYPED_ARRAY_FLOAT32; }
+	else if (value->IsFloat64Array()) { return TYPED_ARRAY_FLOAT64; }
+	else {
+		ThrowAllocatedStringException(64, "Unknown typed array sub-type");
+	}
+	return static_cast<TypedArrayType>(0); // unreachable.
+}
+
+int getTypedArrayElementBytesize(TypedArrayType type)
+{
+	switch (type) {
+		case TYPED_ARRAY_INT8:
+		case TYPED_ARRAY_UINT8:
+		case TYPED_ARRAY_UINT8_CLAMPED:
+			return 1;
+
+		case TYPED_ARRAY_INT16:
+		case TYPED_ARRAY_UINT16:
+			return 2;
+
+		case TYPED_ARRAY_INT32:
+		case TYPED_ARRAY_UINT32:
+		case TYPED_ARRAY_FLOAT32:
+			return 4;
+
+		case TYPED_ARRAY_FLOAT64:
+			return 8;
+	}
+	ThrowAllocatedStringException(64, "Unhandled type array type %d", type);
+}
+
+unsigned char* arrayBufferData(Local<ArrayBuffer> buffer) {
+	// Using buffer.ByteLength isn't strictly necessary here - we could still get a pointer to the
+	// beginning of the array by making a 1-element array.
+	Local<Uint8Array> fullBufferView = Uint8Array::New(buffer, 0, buffer->ByteLength());
+	// GetIndexedPropertiesExternalArrayData only works when the value is treated as an Object.
+	Local<Object> bufferViewAsObject = fullBufferView->ToObject();
+	unsigned char* p = static_cast<unsigned char*>(bufferViewAsObject->GetIndexedPropertiesExternalArrayData());
+	if (p == NULL) {
+		// See: https://groups.google.com/forum/#!searchin/v8-users/ArrayBuffer/v8-users/iiZr67iAfU0/nbmc9Lo23BYJ
+		// GetIndexedPropertiesExternalArrayData seems to work so far, but there are reports that
+		// it sometimes returns null. From reading the v8 source its not clear how a typed array
+		// could ever return null, but we should keep an eye on this.
+		ThrowAllocatedStringException(64, "GetIndexedPropertiesExternalArrayData() returned NULL");
+	}
+	return p;
+}
+
 // This is templated so that we can use this function to both count the number of bytes, and to serialize those bytes.
 // The template approach eliminates almost all of the inspection of values unless they're required (eg. string lengths)
 // and ensures that there is always consistency between bytes counted and bytes written by design.
@@ -302,8 +358,35 @@ template<typename T> void BSONSerializer<T>::SerializeValue(void* typeLocation, 
 				this->CommitType(typeLocation, BSON_TYPE_MAX_KEY);
 			}
 		}
+		else if (value->IsArrayBufferView()) {
+			if (!value->IsTypedArray()) {
+				ThrowAllocatedStringException(128, "ArrayBufferViews other than Typed Arrays not supported");
+			}
+			TypedArrayType arrayType = getTypedArrayType(value);
+
+			// We serialize the entire ArrayBuffer, even if the array is just a small view into
+			// a larger buffer. This is how webworkers in chrome behave.
+			ArrayBufferView* bufferView = ArrayBufferView::Cast(*value);
+			Local<ArrayBuffer> buffer = bufferView->Buffer();
+
+			size_t viewLength = bufferView->ByteLength();
+			size_t viewOffset = bufferView->ByteOffset();
+			size_t bufferLength = buffer->ByteLength();
+
+			unsigned char* p = arrayBufferData(buffer);
+			if (p == NULL) { return; }
+
+			this->CommitType(typeLocation, BSON_TYPE_TYPED_ARRAY);
+			// If you change the order of writes here, be sure to update the order of the corresponding
+			// reads in DeserializeValue.
+			this->WriteByte(arrayType);
+			this->WriteInt64(viewLength);
+			this->WriteInt64(viewOffset);
+			this->WriteInt64(bufferLength);
+			for (size_t i = 0; i < bufferLength; i++) { this->WriteByte(p[i]); }
+		}
 		else if(Buffer::HasInstance(value))
-		{
+		{ 
 			this->CommitType(typeLocation, BSON_TYPE_BINARY);
 
 	    #if NODE_MAJOR_VERSION == 0 && NODE_MINOR_VERSION < 3
@@ -587,6 +670,36 @@ Handle<Value> BSONDeserializer::DeserializeValue(BsonType type, bool promoteLong
 
 	case BSON_TYPE_MAX_KEY:
 		return NanNew(bson->maxKeyConstructor)->NewInstance();
+
+  case BSON_TYPE_TYPED_ARRAY:
+    {
+      TypedArrayType arrayType = static_cast<TypedArrayType>(ReadByte());
+      size_t viewLength = ReadInt64();
+      size_t viewOffset = ReadInt64();
+      size_t bufferLength = ReadInt64();
+
+      int elementCount = viewLength / getTypedArrayElementBytesize(arrayType);
+      Local<ArrayBuffer> buffer = ArrayBuffer::New(Isolate::GetCurrent(), bufferLength);
+
+      unsigned char* p = arrayBufferData(buffer);
+      if (p == NULL) { return NanNull(); }
+
+      for (size_t i = 0; i < bufferLength; i++) { p[i] = ReadByte(); }
+
+      switch (arrayType) {
+        case TYPED_ARRAY_INT8:          return Int8Array::New(buffer, viewOffset, elementCount);
+        case TYPED_ARRAY_UINT8:         return Uint8Array::New(buffer, viewOffset, elementCount);
+        case TYPED_ARRAY_UINT8_CLAMPED: return Uint8ClampedArray::New(buffer, viewOffset, elementCount);
+        case TYPED_ARRAY_INT16:         return Int16Array::New(buffer, viewOffset, elementCount);
+        case TYPED_ARRAY_UINT16:        return Uint16Array::New(buffer, viewOffset, elementCount);
+        case TYPED_ARRAY_INT32:         return Int32Array::New(buffer, viewOffset, elementCount);
+        case TYPED_ARRAY_UINT32:        return Uint32Array::New(buffer, viewOffset, elementCount);
+        case TYPED_ARRAY_FLOAT32:       return Float32Array::New(buffer, viewOffset, elementCount);
+        case TYPED_ARRAY_FLOAT64:       return Float64Array::New(buffer, viewOffset, elementCount);
+      }
+      ThrowAllocatedStringException(64, "Unhandled TypedArrayType arrayType: %d", arrayType);
+      return NanNull();;
+    }
 
 	default:
 		ThrowAllocatedStringException(64, "Unhandled BSON Type: %d", type);

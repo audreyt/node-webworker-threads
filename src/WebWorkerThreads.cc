@@ -798,51 +798,52 @@ NAN_METHOD(processEmitSerialized) {
   NanReturnValue(args.This());
 }
 
-#define POST_EVENT(eventname) { \
-  NanScope(); \
-  int len = args.Length(); \
- \
-  if (!len) NanReturnValue(args.This()); \
- \
-  typeThread* thread= (typeThread*) NanGetIsolateData(Isolate::GetCurrent()); \
- \
-  typeQueueItem* qitem= nuJobQueueItem(); \
-  typeJob* job= (typeJob*) qitem->asPtr; \
- \
-  job->jobType= kJobTypeEventSerialized; \
-  job->typeEventSerialized.eventName= new String::Utf8Value(NanNew<String>(eventname)); \
-  job->typeEventSerialized.length= len; \
- \
-  Local<Array> array= NanNew<Array>(len); \
-  int i = 0; do { array->Set(i, args[i]); } while (++i < len); \
- \
-    { \
-      char* buffer; \
-      BSON *bson = new BSON(); \
-      size_t object_size; \
-      Local<Object> object = bson->GetSerializeObject(array); \
-      BSONSerializer<CountStream> counter(bson, false, false); \
-      counter.SerializeDocument(object); \
-      object_size = counter.GetSerializeSize(); \
-      buffer = (char *)malloc(object_size); \
-      BSONSerializer<DataStream> data(bson, false, false, buffer); \
-      data.SerializeDocument(object); \
-      job->typeEventSerialized.buffer= buffer; \
-      job->typeEventSerialized.bufferSize= object_size; \
-    } \
- \
-  queue_push(qitem, &thread->outQueue); \
-  if (!(thread->inQueue.length)) uv_async_send(&thread->async_watcher); \
- \
-  NanReturnValue(args.This()); \
+template <typename ArgType>
+void postEvent(ArgType& args, const char* eventname) {
+  NanScope();
+  int len = args.Length();
+
+  if (!len) NanReturnValue(args.This());
+
+  typeThread* thread= (typeThread*) NanGetIsolateData(Isolate::GetCurrent());
+
+  typeQueueItem* qitem= nuJobQueueItem();
+  typeJob* job= (typeJob*) qitem->asPtr;
+
+  job->jobType= kJobTypeEventSerialized;
+  job->typeEventSerialized.eventName= new String::Utf8Value(NanNew<String>(eventname));
+  job->typeEventSerialized.length= len;
+
+  Local<Array> array= NanNew<Array>(len);
+  int i = 0; do { array->Set(i, args[i]); } while (++i < len);
+
+    {
+      char* buffer;
+      BSON *bson = new BSON();
+      size_t object_size;
+      Local<Object> object = bson->GetSerializeObject(array);
+      BSONSerializer<CountStream> counter(bson, false, false);
+      counter.SerializeDocument(object);
+      object_size = counter.GetSerializeSize();
+      buffer = (char *)malloc(object_size);
+      BSONSerializer<DataStream> data(bson, false, false, buffer);
+      data.SerializeDocument(object);
+      job->typeEventSerialized.buffer= buffer;
+      job->typeEventSerialized.bufferSize= object_size;
+    }
+
+  queue_push(qitem, &thread->outQueue);
+  if (!(thread->inQueue.length)) uv_async_send(&thread->async_watcher);
+
+  NanReturnValue(args.This());
 }
 
 NAN_METHOD(postMessage) {
-  POST_EVENT("message");
+  postEvent(args, "message");
 }
 
 NAN_METHOD(postError) {
-  POST_EVENT("error");
+  postEvent(args, "error");
 }
 
 NAN_METHOD(threadEmit) {

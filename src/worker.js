@@ -28,10 +28,12 @@ function Worker(){
         }
       };
       this.dispatchEvent = function(event){
-        return t.emitSerialized(event.type, event);
+        return t.emitSerialized(event.type, null, event);
       };
-      this.postMessage = function(data){
-        return t.emitSerialized('message', {
+      this.postMessage = function(data, transferables){
+        console.log('hay');
+        if (transferables == null) { transferables = null; }
+        return t.emitSerialized('message', transferables, {
           data: data
         });
       };

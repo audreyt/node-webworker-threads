@@ -191,6 +191,41 @@ unsigned char* arrayBufferData(Local<ArrayBuffer> buffer) {
 	return p;
 }
 
+template <typename T>
+int BSONSerializer<T>::TransferableIndex(Local<ArrayBuffer> buffer) {
+	if (transferables != NULL)
+	{
+		for (size_t i = 0; i < transferables->size(); i++)
+		{
+			if (buffer->StrictEquals((*transferables)[i])) { return i; }
+		}
+	}
+	return -1;
+}
+
+template <typename T>
+struct Externalizer;
+
+template <>
+struct Externalizer<CountStream> {
+	static unsigned char* externalize(Local<ArrayBuffer> buffer, int bufferLength)
+	{
+		// We don't actually externalize the buffers until the DataStream step runs.
+		return NULL;
+	}
+};
+
+template <>
+struct Externalizer<DataStream> {
+	static unsigned char* externalize(Local<ArrayBuffer> buffer, int bufferLength)
+	{
+		ArrayBuffer::Contents contents = buffer->Externalize();
+		buffer->Neuter();
+		return static_cast<unsigned char*>(contents.Data());
+	}
+};
+
+
 // This is templated so that we can use this function to both count the number of bytes, and to serialize those bytes.
 // The template approach eliminates almost all of the inspection of values unless they're required (eg. string lengths)
 // and ensures that there is always consistency between bytes counted and bytes written by design.
@@ -364,8 +399,8 @@ template<typename T> void BSONSerializer<T>::SerializeValue(void* typeLocation, 
 			}
 			TypedArrayType arrayType = getTypedArrayType(value);
 
-			// We serialize the entire ArrayBuffer, even if the array is just a small view into
-			// a larger buffer. This is how webworkers in chrome behave.
+			// When an ArrayBuffer has not been specified as a transferable, we serialize the entire ArrayBuffer,
+			// even if the array is just a small view into a larger buffer. This is how webworkers in chrome behave.
 			ArrayBufferView* bufferView = ArrayBufferView::Cast(*value);
 			Local<ArrayBuffer> buffer = bufferView->Buffer();
 
@@ -373,7 +408,26 @@ template<typename T> void BSONSerializer<T>::SerializeValue(void* typeLocation, 
 			size_t viewOffset = bufferView->ByteOffset();
 			size_t bufferLength = buffer->ByteLength();
 
-			unsigned char* p = arrayBufferData(buffer);
+			int transferableIdx = TransferableIndex(buffer);
+			bool transferable = transferableIdx >= 0;
+			unsigned char* p = NULL;
+			if (transferable)
+			{
+				if (buffer->IsExternal())
+				{
+					p = arrayBufferData(buffer);
+				}
+				else
+				{
+					p = Externalizer<T>::externalize(buffer, bufferLength);
+				}
+				transferableContents[transferableIdx] = p;
+			}
+			if (p == NULL)
+			{
+				p = arrayBufferData(buffer);
+			}
+
 			if (p == NULL) { return; }
 
 			this->CommitType(typeLocation, BSON_TYPE_TYPED_ARRAY);
@@ -383,7 +437,17 @@ template<typename T> void BSONSerializer<T>::SerializeValue(void* typeLocation, 
 			this->WriteInt64(viewLength);
 			this->WriteInt64(viewOffset);
 			this->WriteInt64(bufferLength);
-			for (size_t i = 0; i < bufferLength; i++) { this->WriteByte(p[i]); }
+			if (transferable)
+			{
+				this->WritePointer(p);
+			}
+			else
+			{
+				// The deserializer uses NULL as the signal to read in the ArrayBuffer contents from
+				// the data stream.
+				this->WritePointer(NULL);
+				for (size_t i = 0; i < bufferLength; i++) { this->WriteByte(p[i]); }
+			}
 		}
 		else if(Buffer::HasInstance(value))
 		{ 
@@ -550,6 +614,33 @@ Handle<Value> BSONDeserializer::DeserializeArrayInternal(bool promoteLongs)
 	return returnArray;
 }
 
+class ArrayGCInfo {
+ public:
+	ArrayGCInfo(Isolate* i, Local<ArrayBuffer> buffer, unsigned char* _p)
+	: pHandle(new Persistent<ArrayBuffer>(i, buffer)), p(reinterpret_cast<char*>(_p))
+	{
+		pHandle->SetWeak(this, &ArrayGCInfo::WeakCallback);
+	}
+
+	~ArrayGCInfo()
+	{
+		// XXX This never runs, and I haven't been able to figure out why yet.
+		printf("XXXXX Cleaning up ArrayBuffer! XXXXXXX\n");
+		delete pHandle;
+		delete[] p;
+		pHandle = NULL;
+		p = NULL;
+	}
+
+	static void WeakCallback(const WeakCallbackData<ArrayBuffer, ArrayGCInfo>& data) {
+		ArrayGCInfo* info = data.GetParameter();
+		delete info;
+	}
+ private:
+  Persistent<ArrayBuffer>* pHandle;
+	char* p;
+};
+
 Handle<Value> BSONDeserializer::DeserializeValue(BsonType type, bool promoteLongs)
 {
 	switch(type)
@@ -677,14 +768,30 @@ Handle<Value> BSONDeserializer::DeserializeValue(BsonType type, bool promoteLong
       size_t viewLength = ReadInt64();
       size_t viewOffset = ReadInt64();
       size_t bufferLength = ReadInt64();
+			unsigned char* pointer = static_cast<unsigned char*>(ReadPointer());
 
       int elementCount = viewLength / getTypedArrayElementBytesize(arrayType);
-      Local<ArrayBuffer> buffer = ArrayBuffer::New(Isolate::GetCurrent(), bufferLength);
 
-      unsigned char* p = arrayBufferData(buffer);
-      if (p == NULL) { return NanNull(); }
-
-      for (size_t i = 0; i < bufferLength; i++) { p[i] = ReadByte(); }
+			Isolate* i = Isolate::GetCurrent();
+			Local<ArrayBuffer> buffer;
+			if (pointer == NULL)
+			{
+				// ArrayBuffer was not transferred, must allocate new one.
+				buffer = ArrayBuffer::New(i, bufferLength);
+				unsigned char* p = arrayBufferData(buffer);
+				if (p == NULL) { return NanNull(); }
+				for (size_t i = 0; i < bufferLength; i++) { p[i] = ReadByte(); }
+			}
+			else
+			{
+				// Create buffer from existing memory.
+				buffer = ArrayBuffer::New(i, pointer, bufferLength);
+				// Create Persistent handle with WeakCallback to free memory after buffer is GCed.
+				// XXX: If this ArrayBuffer is later transferred out of this thread, we must cancel
+				// this weak callback or we'll get a double delete.
+				// (That is, if the weak callback ever ran, which it currently doesn't)
+				new ArrayGCInfo(Isolate::GetCurrent(), buffer, pointer);
+			}
 
       switch (arrayType) {
         case TYPED_ARRAY_INT8:          return Int8Array::New(buffer, viewOffset, elementCount);
@@ -978,7 +1085,7 @@ NAN_METHOD(BSON::BSONSerialize)
 	{
 		Local<Object> object = bson->GetSerializeObject(args[0]);
 
-		BSONSerializer<CountStream> counter(bson, false, serializeFunctions);
+		BSONSerializer<CountStream> counter(bson, false, serializeFunctions, NULL);
 		counter.SerializeDocument(object);
 		object_size = counter.GetSerializeSize();
 
@@ -987,7 +1094,7 @@ NAN_METHOD(BSON::BSONSerialize)
 
 		// Check if we have a boolean value
 		bool checkKeys = args.Length() >= 3 && args[1]->IsBoolean() && args[1]->BooleanValue();
-		BSONSerializer<DataStream> data(bson, checkKeys, serializeFunctions, serialized_object);
+		BSONSerializer<DataStream> data(bson, checkKeys, serializeFunctions, serialized_object, NULL);
 		data.SerializeDocument(object);
 	}
 	catch(char *err_msg)
@@ -1024,7 +1131,7 @@ NAN_METHOD(BSON::CalculateObjectSize)
 	// Unpack the BSON parser instance
 	BSON *bson = ObjectWrap::Unwrap<BSON>(args.This());
 	bool serializeFunctions = (args.Length() >= 2) && args[1]->BooleanValue();
-	BSONSerializer<CountStream> countSerializer(bson, false, serializeFunctions);
+	BSONSerializer<CountStream> countSerializer(bson, false, serializeFunctions, NULL);
 	countSerializer.SerializeDocument(args[0]);
 
 	// Return the object size
@@ -1056,7 +1163,7 @@ NAN_METHOD(BSON::SerializeWithBufferAndIndex)
 		bool checkKeys = args.Length() >= 4 && args[1]->IsBoolean() && args[1]->BooleanValue();
 		bool serializeFunctions = (args.Length() == 5) && args[4]->BooleanValue();
 
-		BSONSerializer<DataStream> dataSerializer(bson, checkKeys, serializeFunctions, data+index);
+		BSONSerializer<DataStream> dataSerializer(bson, checkKeys, serializeFunctions, data+index, NULL);
 		dataSerializer.SerializeDocument(bson->GetSerializeObject(args[0]));
 		object_size = dataSerializer.GetSerializeSize();
 

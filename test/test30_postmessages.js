@@ -1,10 +1,14 @@
-
+// run with node --expose_gc.
 
 var t= require('../');
 
 var worker = new t.Worker(function() {
   this.onmessage = function(e) {
-    postMessage(e.data);
+    if (e.data.array) {
+      postMessage({ array: e.data.array, test: e.data.test }, [e.data.array.buffer]);
+    } else {
+      postMessage(e.data);
+    }
   }
 });
 
@@ -44,14 +48,26 @@ worker.onmessage = function(event) {
   }
 };
 
+worker.onerror = function (event) {
+  console.log('error', event);
+}
+
 // Test a regular array.
 var a = new Uint8Array(64);
 for (var i = 0; i < 64; i++) { a[i] = i; }
-worker.postMessage({ array: a, test: 'regular'}, [a.buffer]);
+worker.postMessage({ array: a, test: 'regular'});
 
 // Test an array which is a view into a larger buffer.
 var b = a.subarray(16, 32);
 worker.postMessage({ array: b, test: 'subarray'});
 
-worker.postMessage({ terminate: 1 });
+// Test transferable serialization
+var t = new Uint8Array(b, 0, 64);
+for (var i = 0; i < 64; i++) { t[i] = i; }
+worker.postMessage({ array: t, test: 'regular'}, [t.buffer]);
+if (t[0] == 0) {
+  console.log("ERROR: array was still accessible after transfer");
+}
 
+worker.postMessage({ terminate: 1 });
+gc();

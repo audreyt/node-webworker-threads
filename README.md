@@ -7,7 +7,7 @@ This module provides an asynchronous, evented and/or continuation passing style 
 On Unix (including Linux and OS X), this module requires Node.js 0.8.0+ and a working node-gyp toolchain, which in turn requires make and C/C++.
 For example, on OS X, you could install XCode from Apple, and then use it to install the command line tools (under Preferences -> Downloads).
 
-On Windows, this module requires Node.js 0.9.3+ and a working [node-gyp toolchain](http://dailyjs.com/2012/05/17/windows-and-node-3/).
+On Windows, this module requires Node.js 0.9.3+ and a working [node-gyp toolchain](https://github.com/nodejs/node-gyp#installation).
 
 ## Illustrated Writeup
 

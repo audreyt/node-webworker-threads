@@ -10,8 +10,11 @@ function Worker () => Threads = this; class
                 @onmessage = cb
             else
                 t.on event, cb
-        @dispatch-event = (event) -> t.emitSerialized event.type, event
-        @post-message = (data) -> t.emitSerialized \message {data}
+        @dispatch-event = (event) -> t.emitSerialized event.type, null, event
+        @post-message = (data, transferables) ->
+          if not transferables?
+            transferables = null
+          t.emitSerialized \message, transferables, {data}
         if typeof code is \function
             t.eval "(#code)()"
         else if code?

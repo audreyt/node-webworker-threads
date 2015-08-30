@@ -35,8 +35,26 @@ enum BsonType
 	BSON_TYPE_INT			= 16,
 	BSON_TYPE_TIMESTAMP		= 17,
 	BSON_TYPE_LONG			= 18,
+	BSON_TYPE_TYPED_ARRAY		= 19,
+	BSON_TYPE_TYPED_ARRAY_TRANSFERABLE	= 20,
 	BSON_TYPE_MAX_KEY		= 0x7f,
 	BSON_TYPE_MIN_KEY		= 0xff
+};
+
+enum TypedArrayType
+{
+  TYPED_ARRAY_INT8 = 1,
+  TYPED_ARRAY_UINT8 = 2,
+  TYPED_ARRAY_UINT8_CLAMPED = 3,
+
+  TYPED_ARRAY_INT16 = 4,
+  TYPED_ARRAY_UINT16 = 5,
+
+  TYPED_ARRAY_INT32 = 6,
+  TYPED_ARRAY_UINT32 = 7,
+
+  TYPED_ARRAY_FLOAT32 = 8,
+  TYPED_ARRAY_FLOAT64 = 9,
 };
 
 //===========================================================================
@@ -141,6 +159,7 @@ public:
 	void	WriteObjectId(const Handle<Object>& object, const Handle<String>& key)				{ count += 12; }
 	void	WriteString(const Local<String>& value)					{ count += value->Utf8Length() + 1; }	// This returns the number of bytes exclusive of the NULL terminator
 	void	WriteData(const char* data, size_t length)				{ count += length; }
+	void	WritePointer(void*)										{ count += sizeof(void*); }
 
 	void*	BeginWriteType()										{ ++count; return NULL; }
 	void	CommitType(void*, BsonType)								{ }
@@ -167,10 +186,12 @@ public:
 	void	WriteInt32(int32_t value)								{ *reinterpret_cast<int32_t*>(p) = value; p += 4; }
 	void	WriteInt64(int64_t value)								{ *reinterpret_cast<int64_t*>(p) = value; p += 8; }
 	void	WriteDouble(double value)								{ *reinterpret_cast<double*>(p) = value; p += 8; }
+	void	WritePointer(void* value)								{ *reinterpret_cast<void**>(p) = value; p += sizeof(void*); }
 #else
 	void	WriteInt32(int32_t value)								{ memcpy(p, &value, 4); p += 4; }
 	void	WriteInt64(int64_t value)								{ memcpy(p, &value, 8); p += 8; }
 	void	WriteDouble(double value)								{ memcpy(p, &value, 8); p += 8; }
+    void	WritePointer(void* value)								{ memcpy(p, &value, sizeof(void*)); p += sizeof(void*); }
 #endif
 	void	WriteBool(const Handle<Value>& value)					{ WriteByte(value->BooleanValue() ? 1 : 0); }
 	void	WriteInt32(const Handle<Value>& value)					{ WriteInt32(value->Int32Value());			}
@@ -209,17 +230,33 @@ private:
 	typedef T Inherited;
 
 public:
-	BSONSerializer(BSON* aBson, bool aCheckKeys, bool aSerializeFunctions) : Inherited(), checkKeys(aCheckKeys), serializeFunctions(aSerializeFunctions), bson(aBson) { }
-	BSONSerializer(BSON* aBson, bool aCheckKeys, bool aSerializeFunctions, char* parentParam) : Inherited(parentParam), checkKeys(aCheckKeys), serializeFunctions(aSerializeFunctions), bson(aBson) { }
+	BSONSerializer(BSON* aBson, bool aCheckKeys, bool aSerializeFunctions, const std::vector<Local<ArrayBuffer> >* aTransferables)
+  : Inherited(), checkKeys(aCheckKeys), serializeFunctions(aSerializeFunctions), bson(aBson), transferables(aTransferables)
+  {
+    if (transferables != NULL) { transferableContents.resize(transferables->size(), NULL); }
+  }
+	BSONSerializer(BSON* aBson, bool aCheckKeys, bool aSerializeFunctions, char* parentParam, const std::vector<Local<ArrayBuffer> >* aTransferables)
+  : Inherited(parentParam), checkKeys(aCheckKeys), serializeFunctions(aSerializeFunctions), bson(aBson), transferables(aTransferables)
+  {
+    if (transferables != NULL) { transferableContents.resize(transferables->size(), NULL); }
+  }
 
 	void SerializeDocument(const Handle<Value>& value);
 	void SerializeArray(const Handle<Value>& value);
 	void SerializeValue(void* typeLocation, const Handle<Value>& value);
 
 private:
+  int TransferableIndex(Local<ArrayBuffer> buffer);
+
 	bool		checkKeys;
 	bool		serializeFunctions;
 	BSON*		bson;
+  const std::vector<Local<ArrayBuffer> >* transferables;
+
+  // Parallels transferables. Each entry stores the pointer returned by ArrayBuffer::Externalize
+  // (if that buffer has already been externalized during serialization) or a NULL pointer if the
+  // corresponding buffer has not yet been externalized.
+  std::vector<unsigned char*> transferableContents;
 };
 
 //===========================================================================
@@ -245,11 +282,13 @@ public:
 	uint32_t		ReadUInt32()		{ uint32_t returnValue = *reinterpret_cast<uint32_t*>(p); p += 4; return returnValue; }
 	int64_t			ReadInt64()			{ int64_t returnValue = *reinterpret_cast<int64_t*>(p); p += 8; return returnValue; }
 	double			ReadDouble()		{ double returnValue = *reinterpret_cast<double*>(p); p += 8; return returnValue; }
+	void*				ReadPointer()		{ void* returnValue = *reinterpret_cast<void**>(p); p += sizeof(void*); return returnValue; }
 #else
 	int32_t			ReadInt32()			{ int32_t returnValue; memcpy(&returnValue, p, 4); p += 4; return returnValue; }
 	uint32_t		ReadUInt32()		{ uint32_t returnValue; memcpy(&returnValue, p, 4); p += 4; return returnValue; }
 	int64_t			ReadInt64()			{ int64_t returnValue; memcpy(&returnValue, p, 8); p += 8; return returnValue; }
 	double			ReadDouble()		{ double returnValue; memcpy(&returnValue, p, 8); p += 8; return returnValue; }
+	void*				ReadPointer()		{ void* returnValue; memcpy(&returnValue, p, sizeof(void*)); p += sizeof(void*); return returnValue; }
 #endif
 
 	size_t			GetSerializeSize() const { return p - pStart; }

@@ -22,13 +22,13 @@
 static const PropertyAttribute attribute_ro_dd = (PropertyAttribute)(ReadOnly | DontDelete);
 static const PropertyAttribute attribute_ro_de_dd = (PropertyAttribute)(ReadOnly | DontEnum | DontDelete);
 #define JSObjFn(obj, name, fnname) \
-	obj->ForceSet(NanNew<String>(name), NanNew<FunctionTemplate>(fnname)->GetFunction(), attribute_ro_dd);
+    obj->ForceSet(Nan::New<String>(name).ToLocalChecked(), Nan::New<FunctionTemplate>(fnname)->GetFunction(), attribute_ro_dd);
 
 static void ReportException(TryCatch* try_catch) {
-	NanScope();
+    Nan::HandleScope scope;
 
 	String::Utf8Value exception(try_catch->Exception());
-	Handle<Message> message = try_catch->Message();
+    Local<Message> message = try_catch->Message();
 
 	if (message.IsEmpty()) {
 		printf("%s\n", *exception);
@@ -68,15 +68,15 @@ static void ReportException(TryCatch* try_catch) {
 	}
 }
 
-//static Handle<Value> readFileSync_(const Arguments &args) {
+//static Local<Value> readFileSync_(const Arguments &info) {
 NAN_METHOD(readFileSync_) {
-	NanScope();
+    Nan::HandleScope scope;
 
-	FILE *f = fopen(*String::Utf8Value(Handle<String>::Cast(args[0])), "rb");
+    FILE *f = fopen(*String::Utf8Value(Local<String>::Cast(info[0])), "rb");
 	if (f == NULL) {
 		char str[256];
 		sprintf(str, "Error: readfile open failed. %d %s\n", errno, strerror(errno));
-		return NanThrowError(NanNew<String>(str));
+        return Nan::ThrowError(Nan::New<String>(str).ToLocalChecked());
 	}
 	fseek(f, 0, SEEK_END);
 	size_t s = ftell(f);
@@ -89,20 +89,20 @@ NAN_METHOD(readFileSync_) {
 		sprintf(str, "Error: readfile read failed. %d %s\n", ferror(f), strerror(ferror(f)));
 		delete[] buf;
 		fclose(f);
-		NanThrowError(str);
+        Nan::ThrowError(str);
 	}
 	buf[s] = 0;
-	Handle<String> str = NanNew<String>(buf);
+    Local<String> str = Nan::New<String>(buf).ToLocalChecked();
 	free(buf);
 	fclose(f);
 
-	NanReturnValue(str);
+    info.GetReturnValue().Set(str);
 }
 
 
 
 //  console section
-static inline void console_common_1(const Handle<Value> &v, FILE* fd, const int deep) {
+static inline void console_common_1(const Local<Value> &v, FILE* fd, const int deep) {
 	char indent[36] = {};
 	int i, n;
 	int mark = 0;
@@ -111,29 +111,29 @@ static inline void console_common_1(const Handle<Value> &v, FILE* fd, const int 
 		indent[mark++] = 0x20;
 	}
 
-	Handle<Value> lv;
+    Local<Value> lv;
 	if (v->IsFunction()) {
 		fprintf(fd, "%s[Function]\n", indent);
 	} else if (v->IsObject()) {
-		Handle<Object> obj = Handle<Object>::Cast(v);
-		Handle<Array> ar = obj->GetPropertyNames();
+        Local<Object> obj = Local<Object>::Cast(v);
+        Local<Array> ar = obj->GetPropertyNames();
 		fprintf(fd, "%s{Object}\n", indent);
 		for (i=0, n=ar->Length(); i<n; ++i) {
 			lv = obj->Get(ar->Get(i));
-			fprintf(fd, "%s%s: ", indent, *(String::Utf8Value(Handle<String>::Cast(ar->Get(i)))));
+            fprintf(fd, "%s%s: ", indent, *(String::Utf8Value(Local<String>::Cast(ar->Get(i)))));
 			if (lv->IsFunction()) {
 				fprintf(fd, "%s[Function]\n", indent);
 			} else if (lv->IsObject() || lv->IsArray()) {
 				//fprintf(fd, "\n");
 				console_common_1(lv, fd, deep+1);
 			} else {
-				fprintf(fd, "%s%s\n", indent, *(String::Utf8Value(Handle<String>::Cast(lv))));
+                fprintf(fd, "%s%s\n", indent, *(String::Utf8Value(Local<String>::Cast(lv))));
 			}
 		}
 		fprintf(fd, "%s{/Object}\n", indent);
 
 	} else if (v->IsArray()) {
-		Handle<Array> obj = Handle<Array>::Cast(v);
+        Local<Array> obj = Local<Array>::Cast(v);
 		fprintf(fd, "%s[Array]\n", indent);
 		for (i=0, n=obj->Length(); i<n; ++i) {
 			lv = obj->Get(i);
@@ -144,43 +144,43 @@ static inline void console_common_1(const Handle<Value> &v, FILE* fd, const int 
 				fprintf(fd, "\n");
 				console_common_1(lv, fd, deep+1);
 			} else {
-				fprintf(fd, "%s%s\n", indent, *(String::Utf8Value(Handle<String>::Cast(lv))));
+                fprintf(fd, "%s%s\n", indent, *(String::Utf8Value(Local<String>::Cast(lv))));
 			}
 		}
 		fprintf(fd, "%s[/Array]\n", indent);
 	} else {
-		fprintf(fd, "%s%s\n", indent, *(String::Utf8Value(Handle<String>::Cast(v))));
+        fprintf(fd, "%s%s\n", indent, *(String::Utf8Value(Local<String>::Cast(v))));
 	}
 }
 
 NAN_METHOD(console_log) {
-	NanScope();
+    Nan::HandleScope scope;
 	
 	TryCatch trycatch;
 	
-	for (int i=0, n=args.Length(); i<n; ++i) {
-		console_common_1(args[i], stdout, 0);
+    for (int i=0, n=info.Length(); i<n; ++i) {
+        console_common_1(info[i], stdout, 0);
 	}
 
 	if (trycatch.HasCaught()) {
 		ReportException(&trycatch);
 	}
 	
-	NanReturnUndefined();
+    info.GetReturnValue().SetUndefined();
 }
 
 NAN_METHOD(console_error) {
-	NanScope();
+    Nan::HandleScope scope;
 	
 	TryCatch trycatch;
 	
-	for (int i=0, n=args.Length(); i<n; ++i) {
-		console_common_1(args[i], stderr, 0);
+    for (int i=0, n=info.Length(); i<n; ++i) {
+        console_common_1(info[i], stderr, 0);
 	}
 
 	if (trycatch.HasCaught()) {
 		ReportException(&trycatch);
 	}
 	
-	NanReturnUndefined();
+    info.GetReturnValue().SetUndefined();
 }

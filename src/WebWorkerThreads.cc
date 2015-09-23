@@ -41,8 +41,8 @@ static int debug_allocs= 0;
 //using namespace node;
 using namespace v8;
 
-static Persistent<String> id_symbol;
-static Persistent<ObjectTemplate> threadTemplate;
+static Nan::Persistent<String> id_symbol;
+static Nan::Persistent<ObjectTemplate> threadTemplate;
 static bool useLocker;
 
 static typeQueue* freeJobsQueue= NULL;
@@ -64,10 +64,10 @@ typedef struct {
   uv_mutex_t IDLE_mutex;
 
   Isolate* isolate;
-  Persistent<Context> context;
-  Persistent<Object> JSObject;
-  Persistent<Object> threadJSObject;
-  Persistent<Object> dispatchEvents;
+  Nan::Persistent<Context> context;
+  Nan::Persistent<Object> JSObject;
+  Nan::Persistent<Object> threadJSObject;
+  Nan::Persistent<Object> dispatchEvents;
 
   unsigned long threadMagicCookie;
 } typeThread;
@@ -80,7 +80,7 @@ enum jobTypes {
 
 typedef struct {
   int jobType;
-  Persistent<Object> cb;
+  Nan::Persistent<Object> cb;
   union {
     struct {
       int length;
@@ -152,7 +152,7 @@ static typeThread* isAThread (Local<Object> receiver) {
 
   if (receiver->IsObject()) {
     if (receiver->InternalFieldCount() == 1) {
-      thread= (typeThread*) NanGetInternalFieldPointer(receiver, 0);
+      thread= (typeThread*) Nan::GetInternalFieldPointer(receiver, 0);
       if (thread && (thread->threadMagicCookie == kThreadMagicCookie)) {
         return thread;
       }
@@ -182,24 +182,24 @@ static void pushToInQueue (typeQueueItem* qitem, typeThread* thread) {
 
 
 NAN_METHOD(Puts) {
-  NanScope();
+  Nan::HandleScope scope;
   int i= 0;
-  while (i < args.Length()) {
-    String::Utf8Value c_str(args[i]);
+  while (i < info.Length()) {
+    String::Utf8Value c_str(info[i]);
     fputs(*c_str, stdout);
     i++;
   }
   fflush(stdout);
 
   //fprintf(stdout, "*** Puts END\n");
-  NanReturnUndefined();
+  info.GetReturnValue().SetUndefined();
 }
 
 NAN_METHOD(Print) {
-	NanScope();
+    Nan::HandleScope scope;
 	int i= 0;
-	while (i < args.Length()) {
-		String::Utf8Value c_str(args[i]);
+    while (i < info.Length()) {
+        String::Utf8Value c_str(info[i]);
 		fputs(*c_str, stdout);
 		i++;
 	}
@@ -208,7 +208,7 @@ NAN_METHOD(Print) {
 	fflush(stdout);
 	
 	//fprintf(stdout, "*** Puts END\n");
-	NanReturnUndefined();
+    info.GetReturnValue().SetUndefined();
 }
 
 
@@ -259,9 +259,9 @@ static void aThread (void* arg) {
 
 
 
-//static Handle<Value> threadEmit (const Arguments &args);
-//static Handle<Value> postMessage (const Arguments &args);
-//static Handle<Value> postError (const Arguments &args);
+//static Local<Value> threadEmit (const Arguments &info);
+//static Local<Value> postMessage (const Arguments &info);
+//static Local<Value> postError (const Arguments &info);
 
 NAN_METHOD(threadEmit);
 NAN_METHOD(postMessage);
@@ -274,50 +274,50 @@ static void eventLoop (typeThread* thread) {
   //thread->isolate->Enter();
   
   {
-    NanScope();
+    Nan::HandleScope scope;
     ExtensionConfiguration extensions(0, NULL);
 	
-	Local<FunctionTemplate> ftmpl = NanNew<FunctionTemplate>();
+    Local<FunctionTemplate> ftmpl = Nan::New<FunctionTemplate>();
 	Local<ObjectTemplate> otmpl = ftmpl->InstanceTemplate();
-	Local<Context> ctx =  NanNew<Context>(&extensions, otmpl);
+    Local<Context> ctx =  Nan::New<Context>(&extensions, otmpl);
 
 	//thread->context= Context::New();
-	NanAssignPersistent(thread->context, ctx);
+    thread->context.Reset(ctx);
 	ctx->Enter();
 
 
-    Local<Object> global= NanNew(thread->context)->Global();
+    Local<Object> global= Nan::New(thread->context)->Global();
 
-    Handle<Object> fs_obj = NanNew<Object>();
+    Local<Object> fs_obj = Nan::New<Object>();
     JSObjFn(fs_obj, "readFileSync", readFileSync_);
-    global->ForceSet(NanNew<String>("native_fs_"), fs_obj, attribute_ro_dd);
+    global->ForceSet(Nan::New<String>("native_fs_").ToLocalChecked(), fs_obj, attribute_ro_dd);
 
-    Handle<Object> console_obj = NanNew<Object>();
+    Local<Object> console_obj = Nan::New<Object>();
     JSObjFn(console_obj, "log", console_log);
     JSObjFn(console_obj, "error", console_error);
-    global->ForceSet(NanNew<String>("console"), console_obj, attribute_ro_dd);
+    global->ForceSet(Nan::New<String>("console").ToLocalChecked(), console_obj, attribute_ro_dd);
 
-    global->ForceSet(NanNew<String>("self"), global);
-    global->ForceSet(NanNew<String>("global"), global);
+    global->ForceSet(Nan::New<String>("self").ToLocalChecked(), global);
+    global->ForceSet(Nan::New<String>("global").ToLocalChecked(), global);
 
-    global->ForceSet(NanNew<String>("puts"), NanNew<FunctionTemplate>(Puts)->GetFunction());
-    global->ForceSet(NanNew<String>("print"), NanNew<FunctionTemplate>(Print)->GetFunction());
+    global->ForceSet(Nan::New<String>("puts").ToLocalChecked(), Nan::New<FunctionTemplate>(Puts)->GetFunction());
+    global->ForceSet(Nan::New<String>("print").ToLocalChecked(), Nan::New<FunctionTemplate>(Print)->GetFunction());
 
-    global->ForceSet(NanNew<String>("postMessage"), NanNew<FunctionTemplate>(postMessage)->GetFunction());
-    global->ForceSet(NanNew<String>("__postError"), NanNew<FunctionTemplate>(postError)->GetFunction());
+    global->ForceSet(Nan::New<String>("postMessage").ToLocalChecked(), Nan::New<FunctionTemplate>(postMessage)->GetFunction());
+    global->ForceSet(Nan::New<String>("__postError").ToLocalChecked(), Nan::New<FunctionTemplate>(postError)->GetFunction());
 
-    Local<Object> threadObject= NanNew<Object>();
-    global->ForceSet(NanNew<String>("thread"), threadObject);
+    Local<Object> threadObject= Nan::New<Object>();
+    global->ForceSet(Nan::New<String>("thread").ToLocalChecked(), threadObject);
 
-    threadObject->Set(NanNew<String>("id"), NanNew<Number>(thread->id));
-    threadObject->Set(NanNew<String>("emit"), NanNew<FunctionTemplate>(threadEmit)->GetFunction());
-    Local<Object> dispatchEvents= Script::Compile(NanNew<String>(kEvents_js))->Run()->ToObject()->CallAsFunction(threadObject, 0, NULL)->ToObject();
-    Local<Object> dispatchNextTicks= Script::Compile(NanNew<String>(kThread_nextTick_js))->Run()->ToObject();
-    //Local<Array> _ntq= (v8::Array*) *threadObject->Get(NanNew<String>Symbol("_ntq"));
-	//Local<Array> _ntq = Array::Cast(*threadObject->Get(NanNew<String>("_ntq")));
-	Array* _ntq = Array::Cast(*threadObject->Get(NanNew<String>("_ntq")));
+    threadObject->Set(Nan::New<String>("id").ToLocalChecked(), Nan::New<Number>(thread->id));
+    threadObject->Set(Nan::New<String>("emit").ToLocalChecked(), Nan::New<FunctionTemplate>(threadEmit)->GetFunction());
+    Local<Object> dispatchEvents= Script::Compile(Nan::New<String>(kEvents_js).ToLocalChecked())->Run()->ToObject()->CallAsFunction(threadObject, 0, NULL)->ToObject();
+    Local<Object> dispatchNextTicks= Script::Compile(Nan::New<String>(kThread_nextTick_js).ToLocalChecked())->Run()->ToObject();
+    //Local<Array> _ntq= (v8::Array*) *threadObject->Get(Nan::New<String>Symbol("_ntq"));
+    //Local<Array> _ntq = Array::Cast(*threadObject->Get(Nan::New<String>("_ntq")));
+    Array* _ntq = Array::Cast(*threadObject->Get(Nan::New<String>("_ntq").ToLocalChecked()));
 
-    Script::Compile(NanNew<String>(kLoad_js))->Run();
+    Script::Compile(Nan::New<String>(kLoad_js).ToLocalChecked())->Run();
 
     double nextTickQueueLength= 0;
     long int ctr= 0;
@@ -329,7 +329,7 @@ static void eventLoop (typeThread* thread) {
       typeQueueItem* qitem;
 
       {
-        //NanScope();
+        //Nan::HandleScope scope;
         TryCatch onError;
         String::Utf8Value* str;
         Local<String> source;
@@ -343,7 +343,7 @@ static void eventLoop (typeThread* thread) {
 
           if ((++ctr) > 2e3) {
             ctr= 0;
-            NanIdleNotification(1);
+            Nan::IdleNotification(1000);
 
           }
 
@@ -352,17 +352,17 @@ static void eventLoop (typeThread* thread) {
 
             if (job->typeEval.useStringObject) {
               str= job->typeEval.scriptText_StringObject;
-              source= NanNew<String>(**str, (*str).length());
+              source= Nan::New<String>(**str, (*str).length()).ToLocalChecked();
               delete str;
             }
             else {
-              source= NanNew<String>(job->typeEval.scriptText_CharPtr);
+              source= Nan::New<String>(job->typeEval.scriptText_CharPtr).ToLocalChecked();
               free(job->typeEval.scriptText_CharPtr);
             }
 
-            script= NanCompileScript(source);
+            script= Nan::CompileScript(source).ToLocalChecked();
 
-            if (!onError.HasCaught()) resultado= NanRunScript(script);
+            if (!onError.HasCaught()) resultado= Nan::RunScript(script).ToLocalChecked();
 
             if (job->typeEval.tiene_callBack) {
               job->typeEval.error= onError.HasCaught() ? 1 : 0;
@@ -380,35 +380,35 @@ static void eventLoop (typeThread* thread) {
           else if (job->jobType == kJobTypeEvent) {
             //Emitir evento.
 
-            Local<Value> args[2];
+            Local<Value> info[2];
             str= job->typeEvent.eventName;
-            args[0]= NanNew<String>(**str, (*str).length());
+            info[0]= Nan::New<String>(**str, (*str).length()).ToLocalChecked();
             delete str;
 
-            Local<Array> array= NanNew<Array>(job->typeEvent.length);
-            args[1]= array;
+            Local<Array> array= Nan::New<Array>(job->typeEvent.length);
+            info[1]= array;
 
             int i= 0;
             while (i < job->typeEvent.length) {
               str= job->typeEvent.argumentos[i];
-              array->Set(i, NanNew<String>(**str, (*str).length()));
+              array->Set(i, Nan::New<String>(**str, (*str).length()).ToLocalChecked());
               delete str;
               i++;
             }
 
             free(job->typeEvent.argumentos);
             queue_push(qitem, freeJobsQueue);
-            dispatchEvents->CallAsFunction(global, 2, args);
+            dispatchEvents->CallAsFunction(global, 2, info);
           }
           else if (job->jobType == kJobTypeEventSerialized) {
-            Local<Value> args[2];
+            Local<Value> info[2];
             str= job->typeEventSerialized.eventName;
-            args[0]= NanNew<String>(**str, (*str).length());
+            info[0]= Nan::New<String>(**str, (*str).length()).ToLocalChecked();
             delete str;
 
       int len = job->typeEventSerialized.length;
-      Local<Array> array= NanNew<Array>(len);
-      args[1]= array;
+      Local<Array> array= Nan::New<Array>(len);
+      info[1]= array;
 
         {
           BSON *bson = new BSON();
@@ -421,7 +421,7 @@ static void eventLoop (typeThread* thread) {
         }
 
             queue_push(qitem, freeJobsQueue);
-            dispatchEvents->CallAsFunction(global, 2, args);
+            dispatchEvents->CallAsFunction(global, 2, info);
           }
         }
 
@@ -429,7 +429,7 @@ static void eventLoop (typeThread* thread) {
 
           if ((++ctr) > 2e3) {
             ctr= 0;
-            NanIdleNotification(1);
+            Nan::IdleNotification(1000);
           }
 
           resultado= dispatchNextTicks->CallAsFunction(global, 0, NULL);
@@ -457,7 +457,7 @@ static void eventLoop (typeThread* thread) {
 	
   }
 
-  NanDisposePersistent(thread->context);
+  thread->context.Reset();
 }
 
 
@@ -466,14 +466,14 @@ static void eventLoop (typeThread* thread) {
 
 
 static void destroyaThread (typeThread* thread) {
-  NanScope();
+  Nan::HandleScope scope;
 
   thread->sigkill= 0;
   //TODO: hay que vaciar las colas y destruir los trabajos antes de ponerlas a NULL
   thread->inQueue.first= thread->inQueue.last= NULL;
   thread->outQueue.first= thread->outQueue.last= NULL;
-  NanSetInternalFieldPointer(NanNew(thread->JSObject), 0, NULL);
-  NanDisposePersistent(thread->JSObject);
+  Nan::SetInternalFieldPointer(Nan::New(thread->JSObject), 0, NULL);
+  thread->JSObject.Reset();
 
   uv_unref((uv_handle_t*)&thread->async_watcher);
 
@@ -500,10 +500,10 @@ static void Callback (uv_async_t *watcher, int revents) {
     return;
   }
 
-  NanScope();
+  Nan::HandleScope scope;
   typeJob* job;
   Local<Value> argv[2];
-  Local<Value> null = NanNull();
+  Local<Value> null = Nan::Null();
   typeQueueItem* qitem;
   String::Utf8Value* str;
 
@@ -517,14 +517,14 @@ static void Callback (uv_async_t *watcher, int revents) {
         str= job->typeEval.resultado;
 
         if (job->typeEval.error) {
-          argv[0]= Exception::Error(NanNew<String>(**str, (*str).length()));
+          argv[0]= Exception::Error(Nan::New<String>(**str, (*str).length()).ToLocalChecked());
           argv[1]= null;
         } else {
           argv[0]= null;
-          argv[1]= NanNew<String>(**str, (*str).length());
+          argv[1]= Nan::New<String>(**str, (*str).length()).ToLocalChecked();
         }
-        NanNew(job->cb)->CallAsFunction(NanNew(thread->JSObject), 2, argv);
-        NanDisposePersistent(job->cb);
+        Nan::New(job->cb)->CallAsFunction(Nan::New(thread->JSObject), 2, argv);
+        job->cb.Reset();
         job->typeEval.tiene_callBack= 0;
 
         delete str;
@@ -545,37 +545,37 @@ static void Callback (uv_async_t *watcher, int revents) {
 
       //fprintf(stdout, "*** Callback\n");
 
-      Local<Value> args[2];
+      Local<Value> info[2];
 
       str= job->typeEvent.eventName;
-      args[0]= NanNew<String>(**str, (*str).length());
+      info[0]= Nan::New<String>(**str, (*str).length()).ToLocalChecked();
       delete str;
 
-      Local<Array> array= NanNew<Array>(job->typeEvent.length);
-      args[1]= array;
+      Local<Array> array= Nan::New<Array>(job->typeEvent.length);
+      info[1]= array;
 
       int i= 0;
       while (i < job->typeEvent.length) {
         str= job->typeEvent.argumentos[i];
-        array->Set(i, NanNew<String>(**str, (*str).length()));
+        array->Set(i, Nan::New<String>(**str, (*str).length()).ToLocalChecked());
         delete str;
         i++;
       }
 
       free(job->typeEvent.argumentos);
       queue_push(qitem, freeJobsQueue);
-      NanNew(thread->dispatchEvents)->CallAsFunction(NanNew(thread->JSObject), 2, args);
+      Nan::New(thread->dispatchEvents)->CallAsFunction(Nan::New(thread->JSObject), 2, info);
     }
     else if (job->jobType == kJobTypeEventSerialized) {
-      Local<Value> args[2];
+      Local<Value> info[2];
 
       str= job->typeEventSerialized.eventName;
-      args[0]= NanNew<String>(**str, (*str).length());
+      info[0]= Nan::New<String>(**str, (*str).length()).ToLocalChecked();
       delete str;
 
       int len = job->typeEventSerialized.length;
-      Local<Array> array= NanNew<Array>(len);
-      args[1]= array;
+      Local<Array> array= Nan::New<Array>(len);
+      info[1]= array;
 
         {
           BSON *bson = new BSON();
@@ -588,7 +588,7 @@ static void Callback (uv_async_t *watcher, int revents) {
         }
 
       queue_push(qitem, freeJobsQueue);
-      NanNew(thread->dispatchEvents)->CallAsFunction(NanNew(thread->JSObject), 2, args);
+      Nan::New(thread->dispatchEvents)->CallAsFunction(Nan::New(thread->JSObject), 2, info);
     }
   }
 }
@@ -600,14 +600,14 @@ static void Callback (uv_async_t *watcher, int revents) {
 
 // unconditionally destroys a thread by brute force.
 NAN_METHOD(Destroy) {
-  NanScope();
+  Nan::HandleScope scope;
   //TODO: Hay que comprobar que this en un objeto y que tiene hiddenRefTotypeThread_symbol y que no es nil
   //TODO: Aquí habría que usar static void TerminateExecution(int thread_id);
   //TODO: static void v8::V8::TerminateExecution  ( Isolate *   isolate= NULL   )   [static]
 
-  typeThread* thread= isAThread(args.This());
+  typeThread* thread= isAThread(info.This());
   if (!thread) {
-    return NanThrowTypeError("thread.destroy(): the receiver must be a thread object");
+    return Nan::ThrowTypeError("thread.destroy(): the receiver must be a thread object");
   }
 
   if (!thread->sigkill) {
@@ -620,7 +620,7 @@ NAN_METHOD(Destroy) {
     uv_mutex_unlock(&thread->IDLE_mutex);
   }
 
-  NanReturnUndefined();
+  info.GetReturnValue().SetUndefined();
 }
 
 
@@ -630,38 +630,38 @@ NAN_METHOD(Destroy) {
 
 // Eval: Pushes a job into the thread's ->inQueue.
 NAN_METHOD(Eval){
-  NanScope();
+  Nan::HandleScope scope;
 
-  if (!args.Length()) {
-    return NanThrowTypeError("thread.eval(program [,callback]): missing arguments");
+  if (!info.Length()) {
+    return Nan::ThrowTypeError("thread.eval(program [,callback]): missing arguments");
   }
 
-  typeThread* thread= isAThread(args.This());
+  typeThread* thread= isAThread(info.This());
   if (!thread) {
-    return NanThrowTypeError("thread.eval(): the receiver must be a thread object");
+    return Nan::ThrowTypeError("thread.eval(): the receiver must be a thread object");
   }
 
   typeQueueItem* qitem= nuJobQueueItem();
   typeJob* job= (typeJob*) qitem->asPtr;
 
-  job->typeEval.tiene_callBack= ((args.Length() > 1) && (args[1]->IsFunction()));
+  job->typeEval.tiene_callBack= ((info.Length() > 1) && (info[1]->IsFunction()));
   if (job->typeEval.tiene_callBack) {
-    Local<Object> local_cb = args[1]->ToObject();
-	NanAssignPersistent(job->cb, local_cb);
+    Local<Object> local_cb = info[1]->ToObject();
+    job->cb.Reset(local_cb);
   }
-  job->typeEval.scriptText_StringObject= new String::Utf8Value(args[0]);
+  job->typeEval.scriptText_StringObject= new String::Utf8Value(info[0]);
   job->typeEval.useStringObject= 1;
   job->jobType= kJobTypeEval;
 
   pushToInQueue(qitem, thread);
-  NanReturnValue(args.This());
+  info.GetReturnValue().Set(info.This());
 }
 
 
 
 
 
-static char* readFile (Handle<String> path) {
+static char* readFile (Local<String> path) {
   v8::String::Utf8Value c_str(path);
   FILE* fp= fopen(*c_str, "rb");
   if (!fp) {
@@ -693,27 +693,27 @@ static char* readFile (Handle<String> path) {
 
 // Load: Loads from file and passes to Eval
 NAN_METHOD(Load) {
-  NanScope();
+  Nan::HandleScope scope;
 
-  if (!args.Length()) {
-    return NanThrowTypeError("thread.load(filename [,callback]): missing arguments");
+  if (!info.Length()) {
+    return Nan::ThrowTypeError("thread.load(filename [,callback]): missing arguments");
   }
 
-  typeThread* thread= isAThread(args.This());
+  typeThread* thread= isAThread(info.This());
   if (!thread) {
-    return NanThrowTypeError("thread.load(): the receiver must be a thread object");
+    return Nan::ThrowTypeError("thread.load(): the receiver must be a thread object");
   }
 
-  char* source= readFile(args[0]->ToString());  //@Bruno: here we don't know if the file was not found or if it was an empty file
-  if (!source) NanReturnValue(args.This()); //@Bruno: even if source is empty, we should call the callback ?
+  char* source= readFile(info[0]->ToString());  //@Bruno: here we don't know if the file was not found or if it was an empty file
+  if (!source) info.GetReturnValue().Set(info.This()); //@Bruno: even if source is empty, we should call the callback ?
 
   typeQueueItem* qitem= nuJobQueueItem();
   typeJob* job= (typeJob*) qitem->asPtr;
 
-  job->typeEval.tiene_callBack= ((args.Length() > 1) && (args[1]->IsFunction()));
+  job->typeEval.tiene_callBack= ((info.Length() > 1) && (info[1]->IsFunction()));
   if (job->typeEval.tiene_callBack) {
-    Local<Object> local_cb = args[1]->ToObject();
-	NanAssignPersistent(job->cb, local_cb);
+    Local<Object> local_cb = info[1]->ToObject();
+    job->cb.Reset(local_cb);
   }
   job->typeEval.scriptText_CharPtr= source;
   job->typeEval.useStringObject= 0;
@@ -721,7 +721,7 @@ NAN_METHOD(Load) {
 
   pushToInQueue(qitem, thread);
 
-  NanReturnValue(args.This());
+  info.GetReturnValue().Set(info.This());
 }
 
 
@@ -730,43 +730,43 @@ NAN_METHOD(Load) {
 
 
 NAN_METHOD(processEmit) {
-  NanScope();
+  Nan::HandleScope scope;
 
-  if (!args.Length()) NanReturnValue(args.This());
+  if (!info.Length()) info.GetReturnValue().Set(info.This());
 
-  typeThread* thread= isAThread(args.This());
+  typeThread* thread= isAThread(info.This());
   if (!thread) {
-    NanThrowTypeError("thread.emit(): the receiver must be a thread object");
+    Nan::ThrowTypeError("thread.emit(): the receiver must be a thread object");
   }
 
   typeQueueItem* qitem= nuJobQueueItem();
   typeJob* job= (typeJob*) qitem->asPtr;
 
   job->jobType= kJobTypeEvent;
-  job->typeEvent.length= args.Length()- 1;
-  job->typeEvent.eventName= new String::Utf8Value(args[0]);
+  job->typeEvent.length= info.Length()- 1;
+  job->typeEvent.eventName= new String::Utf8Value(info[0]);
   job->typeEvent.argumentos= (v8::String::Utf8Value**) malloc(job->typeEvent.length* sizeof(void*));
 
   int i= 1;
   do {
-    job->typeEvent.argumentos[i-1]= new String::Utf8Value(args[i]);
+    job->typeEvent.argumentos[i-1]= new String::Utf8Value(info[i]);
   } while (++i <= job->typeEvent.length);
 
   pushToInQueue(qitem, thread);
 
-  NanReturnValue(args.This());
+  info.GetReturnValue().Set(info.This());
 }
 
 NAN_METHOD(processEmitSerialized) {
-  NanScope();
+  Nan::HandleScope scope;
 
-  int len = args.Length();
+  int len = info.Length();
 
-  if (!len) NanReturnValue(args.This());
+  if (!len) info.GetReturnValue().Set(info.This());
 
-  typeThread* thread= isAThread(args.This());
+  typeThread* thread= isAThread(info.This());
   if (!thread) {
-    return NanThrowTypeError("thread.emit(): the receiver must be a thread object");
+    return Nan::ThrowTypeError("thread.emit(): the receiver must be a thread object");
   }
 
   typeQueueItem* qitem= nuJobQueueItem();
@@ -774,9 +774,9 @@ NAN_METHOD(processEmitSerialized) {
 
   job->jobType= kJobTypeEventSerialized;
   job->typeEventSerialized.length= len-1;
-  job->typeEventSerialized.eventName= new String::Utf8Value(args[0]);
-  Local<Array> array= NanNew<Array>(len-1);
-  int i = 1; do { array->Set(i-1, args[i]); } while (++i < len);
+  job->typeEventSerialized.eventName= new String::Utf8Value(info[0]);
+  Local<Array> array= Nan::New<Array>(len-1);
+  int i = 1; do { array->Set(i-1, info[i]); } while (++i < len);
 
     {
       char* buffer;
@@ -795,14 +795,14 @@ NAN_METHOD(processEmitSerialized) {
 
   pushToInQueue(qitem, thread);
 
-  NanReturnValue(args.This());
+  info.GetReturnValue().Set(info.This());
 }
 
 #define POST_EVENT(eventname) { \
-  NanScope(); \
-  int len = args.Length(); \
+  Nan::HandleScope scope; \
+  int len = info.Length(); \
  \
-  if (!len) NanReturnValue(args.This()); \
+  if (!len) info.GetReturnValue().Set(info.This()); \
  \
   typeThread* thread= (typeThread*) NanGetIsolateData(Isolate::GetCurrent()); \
  \
@@ -810,11 +810,11 @@ NAN_METHOD(processEmitSerialized) {
   typeJob* job= (typeJob*) qitem->asPtr; \
  \
   job->jobType= kJobTypeEventSerialized; \
-  job->typeEventSerialized.eventName= new String::Utf8Value(NanNew<String>(eventname)); \
+  job->typeEventSerialized.eventName= new String::Utf8Value(Nan::New<String>(eventname).ToLocalChecked()); \
   job->typeEventSerialized.length= len; \
  \
-  Local<Array> array= NanNew<Array>(len); \
-  int i = 0; do { array->Set(i, args[i]); } while (++i < len); \
+  Local<Array> array= Nan::New<Array>(len); \
+  int i = 0; do { array->Set(i, info[i]); } while (++i < len); \
  \
     { \
       char* buffer; \
@@ -834,7 +834,7 @@ NAN_METHOD(processEmitSerialized) {
   queue_push(qitem, &thread->outQueue); \
   if (!(thread->inQueue.length)) uv_async_send(&thread->async_watcher); \
  \
-  NanReturnValue(args.This()); \
+  info.GetReturnValue().Set(info.This());   \
 }
 
 NAN_METHOD(postMessage) {
@@ -846,9 +846,9 @@ NAN_METHOD(postError) {
 }
 
 NAN_METHOD(threadEmit) {
-  NanScope();
+  Nan::HandleScope scope;
 
-  if (!args.Length()) NanReturnValue(args.This());
+  if (!info.Length()) info.GetReturnValue().Set(info.This());
 
   int i;
   typeThread* thread= (typeThread*) NanGetIsolateData(Isolate::GetCurrent());
@@ -857,19 +857,19 @@ NAN_METHOD(threadEmit) {
   typeJob* job= (typeJob*) qitem->asPtr;
 
   job->jobType= kJobTypeEvent;
-  job->typeEvent.length= args.Length()- 1;
-  job->typeEvent.eventName= new String::Utf8Value(args[0]);
+  job->typeEvent.length= info.Length()- 1;
+  job->typeEvent.eventName= new String::Utf8Value(info[0]);
   job->typeEvent.argumentos= (v8::String::Utf8Value**) malloc(job->typeEvent.length* sizeof(void*));
 
   i= 1;
   do {
-    job->typeEvent.argumentos[i-1]= new String::Utf8Value(args[i]);
+    job->typeEvent.argumentos[i-1]= new String::Utf8Value(info[i]);
   } while (++i <= job->typeEvent.length);
 
   queue_push(qitem, &thread->outQueue);
   if (!(thread->inQueue.length)) uv_async_send(&thread->async_watcher); // wake up callback
 
-  NanReturnValue(args.This());
+  info.GetReturnValue().Set(info.This());
 }
 
 
@@ -881,7 +881,7 @@ NAN_METHOD(threadEmit) {
 
 // Creates and launches a new isolate in a new background thread.
 NAN_METHOD(Create) {
-    NanScope();
+    Nan::HandleScope scope;
 
     typeThread* thread;
     typeQueueItem* qitem= NULL;
@@ -898,14 +898,14 @@ NAN_METHOD(Create) {
     static long int threadsCtr= 0;
     thread->id= threadsCtr++;
 
-    Local<Object> local_JSObject = NanNew(threadTemplate)->NewInstance();
-    local_JSObject->Set(NanNew(id_symbol), NanNew<Integer>((int32_t)thread->id));
-	NanSetInternalFieldPointer(local_JSObject, 0, thread);
-	NanAssignPersistent(thread->JSObject, local_JSObject);
+    Local<Object> local_JSObject = Nan::New(threadTemplate)->NewInstance();
+    local_JSObject->Set(Nan::New(id_symbol), Nan::New<Integer>((int32_t)thread->id));
+    Nan::SetInternalFieldPointer(local_JSObject, 0, thread);
+    thread->JSObject.Reset(local_JSObject);
 	
-    Local<Value> dispatchEvents= Script::Compile(NanNew<String>(kEvents_js))->Run()->ToObject()->CallAsFunction(local_JSObject, 0, NULL);
+    Local<Value> dispatchEvents= Script::Compile(Nan::New<String>(kEvents_js).ToLocalChecked())->Run()->ToObject()->CallAsFunction(local_JSObject, 0, NULL);
 	Local<Object> local_dispatchEvents = dispatchEvents->ToObject();
-	NanAssignPersistent(thread->dispatchEvents, local_dispatchEvents);
+    thread->dispatchEvents.Reset(local_dispatchEvents);
 
     uv_async_init(uv_default_loop(), &thread->async_watcher, reinterpret_cast<uv_async_cb>(Callback));
     uv_ref((uv_handle_t*)&thread->async_watcher);
@@ -927,11 +927,11 @@ NAN_METHOD(Create) {
     if (err) {
       //Ha habido un error no se ha arrancado esta thread
       destroyaThread(thread);
-      return NanThrowTypeError("create(): error in pthread_create()");
+      return Nan::ThrowTypeError("create(): error in pthread_create()");
     }
 
-    NanAdjustExternalMemory(sizeof(typeThread));
-    NanReturnValue(NanNew(thread->JSObject));
+    Nan::AdjustExternalMemory(sizeof(typeThread));
+    info.GetReturnValue().Set(Nan::New(thread->JSObject));
 }
 
 
@@ -947,26 +947,26 @@ void Init (Handle<Object> target) {
   freeThreadsQueue= nuQueue(-3);
   freeJobsQueue= nuQueue(-4);
 
-  NanScope();
+  Nan::HandleScope scope;
 
   useLocker= v8::Locker::IsActive();
 
-  target->Set(NanNew<String>("create"), NanNew<FunctionTemplate>(Create)->GetFunction());
-  target->Set(NanNew<String>("createPool"), Script::Compile(NanNew<String>(kCreatePool_js))->Run()->ToObject());
-  target->Set(NanNew<String>("Worker"), Script::Compile(NanNew<String>(kWorker_js))->Run()->ToObject()->CallAsFunction(target, 0, NULL)->ToObject());
+  target->Set(Nan::New<String>("create").ToLocalChecked(), Nan::New<FunctionTemplate>(Create)->GetFunction());
+  target->Set(Nan::New<String>("createPool").ToLocalChecked(), Script::Compile(Nan::New<String>(kCreatePool_js).ToLocalChecked())->Run()->ToObject());
+  target->Set(Nan::New<String>("Worker").ToLocalChecked(), Script::Compile(Nan::New<String>(kWorker_js).ToLocalChecked())->Run()->ToObject()->CallAsFunction(target, 0, NULL)->ToObject());
   
-  Local<String> local_id_symbol = NanNew<String>("id");
+  Local<String> local_id_symbol = Nan::New<String>("id").ToLocalChecked();
 
   Local<ObjectTemplate> local_threadTemplate = ObjectTemplate::New();
   local_threadTemplate->SetInternalFieldCount(1);
-  local_threadTemplate->Set(local_id_symbol, NanNew<Integer>(0));
-  NanAssignPersistent(id_symbol, local_id_symbol);
-  local_threadTemplate->Set(NanNew<String>("eval"), NanNew<FunctionTemplate>(Eval));
-  local_threadTemplate->Set(NanNew<String>("load"), NanNew<FunctionTemplate>(Load));
-  local_threadTemplate->Set(NanNew<String>("emit"), NanNew<FunctionTemplate>(processEmit));
-  local_threadTemplate->Set(NanNew<String>("emitSerialized"), NanNew<FunctionTemplate>(processEmitSerialized));
-  local_threadTemplate->Set(NanNew<String>("destroy"), NanNew<FunctionTemplate>(Destroy));
-  NanAssignPersistent(threadTemplate, local_threadTemplate);
+  local_threadTemplate->Set(local_id_symbol, Nan::New<Integer>(0));
+  id_symbol.Reset(local_id_symbol);
+  local_threadTemplate->Set(Nan::New<String>("eval").ToLocalChecked(), Nan::New<FunctionTemplate>(Eval));
+  local_threadTemplate->Set(Nan::New<String>("load").ToLocalChecked(), Nan::New<FunctionTemplate>(Load));
+  local_threadTemplate->Set(Nan::New<String>("emit").ToLocalChecked(), Nan::New<FunctionTemplate>(processEmit));
+  local_threadTemplate->Set(Nan::New<String>("emitSerialized").ToLocalChecked(), Nan::New<FunctionTemplate>(processEmitSerialized));
+  local_threadTemplate->Set(Nan::New<String>("destroy").ToLocalChecked(), Nan::New<FunctionTemplate>(Destroy));
+  threadTemplate.Reset(local_threadTemplate);
 }
 
 

@@ -48,7 +48,7 @@ public:
 	BSON();
 	~BSON() {}
 
-	static void Initialize(Handle<Object> target);
+    static void Initialize(Local<Object> target);
         static NAN_METHOD(BSONDeserializeStream);
 
 	// JS based objects
@@ -60,59 +60,59 @@ public:
 	static NAN_METHOD(SerializeWithBufferAndIndex);
 
 	// Constructor used for creating new BSON objects from C++
-	static Persistent<FunctionTemplate> constructor_template;
+    static Nan::Persistent<FunctionTemplate> constructor_template;
 
 private:
 	static NAN_METHOD(New);
-	static Handle<Value> deserialize(BSON *bson, char *data, uint32_t dataLength, uint32_t startIndex, bool is_array_item);
+    static Local<Value> deserialize(BSON *bson, char *data, uint32_t dataLength, uint32_t startIndex, bool is_array_item);
 
 	// BSON type instantiate functions
-	Persistent<Function> longConstructor;
-	Persistent<Function> objectIDConstructor;
-	Persistent<Function> binaryConstructor;
-	Persistent<Function> codeConstructor;
-	Persistent<Function> dbrefConstructor;
-	Persistent<Function> symbolConstructor;
-	Persistent<Function> doubleConstructor;
-	Persistent<Function> timestampConstructor;
-	Persistent<Function> minKeyConstructor;
-	Persistent<Function> maxKeyConstructor;
+    Nan::Persistent<Function> longConstructor;
+    Nan::Persistent<Function> objectIDConstructor;
+    Nan::Persistent<Function> binaryConstructor;
+    Nan::Persistent<Function> codeConstructor;
+    Nan::Persistent<Function> dbrefConstructor;
+    Nan::Persistent<Function> symbolConstructor;
+    Nan::Persistent<Function> doubleConstructor;
+    Nan::Persistent<Function> timestampConstructor;
+    Nan::Persistent<Function> minKeyConstructor;
+    Nan::Persistent<Function> maxKeyConstructor;
 
 	// Equality Objects
-	Persistent<String> longString;
-	Persistent<String> objectIDString;
-	Persistent<String> binaryString;
-	Persistent<String> codeString;
-	Persistent<String> dbrefString;
-	Persistent<String> symbolString;
-	Persistent<String> doubleString;
-	Persistent<String> timestampString;
-	Persistent<String> minKeyString;
-	Persistent<String> maxKeyString;
+    Nan::Persistent<String> longString;
+    Nan::Persistent<String> objectIDString;
+    Nan::Persistent<String> binaryString;
+    Nan::Persistent<String> codeString;
+    Nan::Persistent<String> dbrefString;
+    Nan::Persistent<String> symbolString;
+    Nan::Persistent<String> doubleString;
+    Nan::Persistent<String> timestampString;
+    Nan::Persistent<String> minKeyString;
+    Nan::Persistent<String> maxKeyString;
 
 	// Equality speed up comparison objects
-	Persistent<String> _bsontypeString;
-	Persistent<String> _longLowString;
-	Persistent<String> _longHighString;
-	Persistent<String> _objectIDidString;
-	Persistent<String> _binaryPositionString;
-	Persistent<String> _binarySubTypeString;
-	Persistent<String> _binaryBufferString;
-	Persistent<String> _doubleValueString;
-	Persistent<String> _symbolValueString;
+    Nan::Persistent<String> _bsontypeString;
+    Nan::Persistent<String> _longLowString;
+    Nan::Persistent<String> _longHighString;
+    Nan::Persistent<String> _objectIDidString;
+    Nan::Persistent<String> _binaryPositionString;
+    Nan::Persistent<String> _binarySubTypeString;
+    Nan::Persistent<String> _binaryBufferString;
+    Nan::Persistent<String> _doubleValueString;
+    Nan::Persistent<String> _symbolValueString;
 
-	Persistent<String> _dbRefRefString;
-	Persistent<String> _dbRefIdRefString;
-	Persistent<String> _dbRefDbRefString;
-	Persistent<String> _dbRefNamespaceString;
-	Persistent<String> _dbRefDbString;
-	Persistent<String> _dbRefOidString;
+    Nan::Persistent<String> _dbRefRefString;
+    Nan::Persistent<String> _dbRefIdRefString;
+    Nan::Persistent<String> _dbRefDbRefString;
+    Nan::Persistent<String> _dbRefNamespaceString;
+    Nan::Persistent<String> _dbRefDbString;
+    Nan::Persistent<String> _dbRefOidString;
 
-	Persistent<String> _codeCodeString;
-	Persistent<String> _codeScopeString;
-	Persistent<String> _toBSONString;
+    Nan::Persistent<String> _codeCodeString;
+    Nan::Persistent<String> _codeScopeString;
+    Nan::Persistent<String> _toBSONString;
 
-public:	Local<Object> GetSerializeObject(const Handle<Value>& object);
+public:	Local<Object> GetSerializeObject(const Local<Value>& object);
 
 	template<typename T> friend class BSONSerializer;
 	friend class BSONDeserializer;
@@ -126,19 +126,19 @@ public:
 	CountStream() : count(0) { }
 
 	void	WriteByte(int value)									{ ++count; }
-	void	WriteByte(const Handle<Object>&, const Handle<String>&)	{ ++count; }
-	void	WriteBool(const Handle<Value>& value)					{ ++count; }
+    void	WriteByte(const Local<Object>&, const Local<String>&)	{ ++count; }
+    void	WriteBool(const Local<Value>& value)					{ ++count; }
 	void	WriteInt32(int32_t value)								{ count += 4; }
-	void	WriteInt32(const Handle<Value>& value)					{ count += 4; }
-	void	WriteInt32(const Handle<Object>& object, const Handle<String>& key) { count += 4; }
+    void	WriteInt32(const Local<Value>& value)					{ count += 4; }
+    void	WriteInt32(const Local<Object>& object, const Local<String>& key) { count += 4; }
 	void	WriteInt64(int64_t value)								{ count += 8; }
-	void	WriteInt64(const Handle<Value>& value)					{ count += 8; }
+    void	WriteInt64(const Local<Value>& value)					{ count += 8; }
 	void	WriteDouble(double value)								{ count += 8; }
-	void	WriteDouble(const Handle<Value>& value)					{ count += 8; }
-	void	WriteDouble(const Handle<Object>&, const Handle<String>&) { count += 8; }
+    void	WriteDouble(const Local<Value>& value)					{ count += 8; }
+    void	WriteDouble(const Local<Object>&, const Local<String>&) { count += 8; }
 	void	WriteUInt32String(uint32_t name)						{ char buffer[32]; count += sprintf(buffer, "%u", name) + 1; }
 	void	WriteLengthPrefixedString(const Local<String>& value)	{ count += value->Utf8Length()+5; }
-	void	WriteObjectId(const Handle<Object>& object, const Handle<String>& key)				{ count += 12; }
+    void	WriteObjectId(const Local<Object>& object, const Local<String>& key)				{ count += 12; }
 	void	WriteString(const Local<String>& value)					{ count += value->Utf8Length() + 1; }	// This returns the number of bytes exclusive of the NULL terminator
 	void	WriteData(const char* data, size_t length)				{ count += length; }
 
@@ -162,7 +162,7 @@ public:
 	DataStream(char* aDestinationBuffer) : destinationBuffer(aDestinationBuffer), p(aDestinationBuffer) { }
 
 	void	WriteByte(int value)									{ *p++ = value; }
-	void	WriteByte(const Handle<Object>& object, const Handle<String>& key)	{ *p++ = object->Get(key)->Int32Value(); }
+    void	WriteByte(const Local<Object>& object, const Local<String>& key)	{ *p++ = object->Get(key)->Int32Value(); }
 #if USE_MISALIGNED_MEMORY_ACCESS
 	void	WriteInt32(int32_t value)								{ *reinterpret_cast<int32_t*>(p) = value; p += 4; }
 	void	WriteInt64(int64_t value)								{ *reinterpret_cast<int64_t*>(p) = value; p += 8; }
@@ -172,15 +172,15 @@ public:
 	void	WriteInt64(int64_t value)								{ memcpy(p, &value, 8); p += 8; }
 	void	WriteDouble(double value)								{ memcpy(p, &value, 8); p += 8; }
 #endif
-	void	WriteBool(const Handle<Value>& value)					{ WriteByte(value->BooleanValue() ? 1 : 0); }
-	void	WriteInt32(const Handle<Value>& value)					{ WriteInt32(value->Int32Value());			}
-	void	WriteInt32(const Handle<Object>& object, const Handle<String>& key) { WriteInt32(object->Get(key)); }
-	void	WriteInt64(const Handle<Value>& value)					{ WriteInt64(value->IntegerValue());		}
-	void	WriteDouble(const Handle<Value>& value)					{ WriteDouble(value->NumberValue());		}
-	void	WriteDouble(const Handle<Object>& object, const Handle<String>& key) { WriteDouble(object->Get(key)); }
+    void	WriteBool(const Local<Value>& value)					{ WriteByte(value->BooleanValue() ? 1 : 0); }
+    void	WriteInt32(const Local<Value>& value)					{ WriteInt32(value->Int32Value());			}
+    void	WriteInt32(const Local<Object>& object, const Local<String>& key) { WriteInt32(object->Get(key)); }
+    void	WriteInt64(const Local<Value>& value)					{ WriteInt64(value->IntegerValue());		}
+    void	WriteDouble(const Local<Value>& value)					{ WriteDouble(value->NumberValue());		}
+    void	WriteDouble(const Local<Object>& object, const Local<String>& key) { WriteDouble(object->Get(key)); }
 	void	WriteUInt32String(uint32_t name)						{ p += sprintf(p, "%u", name) + 1;			}
 	void	WriteLengthPrefixedString(const Local<String>& value)	{ WriteInt32(value->Utf8Length()+1); WriteString(value); }
-	void	WriteObjectId(const Handle<Object>& object, const Handle<String>& key);
+    void	WriteObjectId(const Local<Object>& object, const Local<String>& key);
 	void	WriteString(const Local<String>& value)					{ p += value->WriteUtf8(p); }		// This returns the number of bytes inclusive of the NULL terminator.
 	void	WriteData(const char* data, size_t length)				{ memcpy(p, data, length); p += length; }
 
@@ -212,9 +212,9 @@ public:
 	BSONSerializer(BSON* aBson, bool aCheckKeys, bool aSerializeFunctions) : Inherited(), checkKeys(aCheckKeys), serializeFunctions(aSerializeFunctions), bson(aBson) { }
 	BSONSerializer(BSON* aBson, bool aCheckKeys, bool aSerializeFunctions, char* parentParam) : Inherited(parentParam), checkKeys(aCheckKeys), serializeFunctions(aSerializeFunctions), bson(aBson) { }
 
-	void SerializeDocument(const Handle<Value>& value);
-	void SerializeArray(const Handle<Value>& value);
-	void SerializeValue(void* typeLocation, const Handle<Value>& value);
+    void SerializeDocument(const Local<Value>& value);
+    void SerializeArray(const Local<Value>& value);
+    void SerializeValue(void* typeLocation, const Local<Value>& value);
 
 private:
 	bool		checkKeys;
@@ -230,10 +230,10 @@ public:
 	BSONDeserializer(BSON* aBson, char* data, size_t length);
 	BSONDeserializer(BSONDeserializer& parentSerializer, size_t length);
 
-	Handle<Value> DeserializeDocument(bool promoteLongs);
+    Local<Value> DeserializeDocument(bool promoteLongs);
 
 	bool			HasMoreData() const { return p < pEnd; }
-	Handle<Value>	ReadCString();
+    Local<Value>	ReadCString();
 	uint32_t		ReadIntegerString();
 	int32_t			ReadRegexOptions();
 	Local<String>	ReadString();
@@ -255,10 +255,10 @@ public:
 	size_t			GetSerializeSize() const { return p - pStart; }
 
 private:
-	Handle<Value> DeserializeArray(bool promoteLongs);
-	Handle<Value> DeserializeValue(BsonType type, bool promoteLongs);
-	Handle<Value> DeserializeDocumentInternal(bool promoteLongs);
-	Handle<Value> DeserializeArrayInternal(bool promoteLongs);
+    Local<Value> DeserializeArray(bool promoteLongs);
+    Local<Value> DeserializeValue(BsonType type, bool promoteLongs);
+    Local<Value> DeserializeDocumentInternal(bool promoteLongs);
+    Local<Value> DeserializeArrayInternal(bool promoteLongs);
 
 	BSON*		bson;
 	char* const pStart;

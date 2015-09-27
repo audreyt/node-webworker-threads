@@ -4,7 +4,7 @@
 
 #include <v8.h>
 #include <node.h>
-#include <node_object_wrap.h>
+//#include <node_object_wrap.h>
 #include <uv.h>
 #include <string.h>
 #include <stdio.h>
@@ -13,26 +13,6 @@
 #include "nan.h"
 #include "nan_isolate_data_accessor.h"
 
-#if defined(__unix__) || defined(__POSIX__) || defined(__APPLE__) || defined(_AIX)
-#define WWT_PTHREAD 1
-#include <pthread.h>
-#include <unistd.h>
-#ifndef uv_cond_t
-#define uv_cond_signal(x) pthread_cond_signal(x)
-#define uv_cond_init(x) pthread_cond_init(x, NULL)
-#define uv_cond_wait(x,y) pthread_cond_wait(x, y)
-typedef pthread_cond_t uv_cond_t;
-#endif
-#else
-#define pthread_setcancelstate(x,y) NULL
-#define pthread_setcanceltype(x,y) NULL
-#endif
-
-
-/*
-static int debug_threads= 0;
-static int debug_allocs= 0;
-*/
 
 #include "queues_a_gogo.cc"
 #include "bson.cc"
@@ -40,7 +20,6 @@ static int debug_allocs= 0;
 
 #include "ArrayBufferAllocator.h"
 
-//using namespace node;
 using namespace v8;
 
 static Nan::Persistent<String> id_symbol;
@@ -125,7 +104,6 @@ cat ../../../src/thread_nextTick.js | ./minify kThread_nextTick_js > ../../../sr
 #include "createPool.js.c"
 #include "worker.js.c"
 #include "thread_nextTick.js.c"
-//#include "JASON.js.c"
 
 //node-waf configure uninstall distclean configure build install
 
@@ -219,16 +197,7 @@ NAN_METHOD(Print) {
 static void eventLoop (typeThread* thread);
 
 // A background thread
-#ifdef WWT_PTHREAD
-static void* aThread (void* arg) {
-#else
 static void aThread (void* arg) {
-#endif
-
-  int dummy;
-  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &dummy);
-  pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &dummy);
-
   typeThread* thread= (typeThread*) arg;
   // ref: https://developers.google.com/v8/get_started
   ArrayBufferAllocator a;
@@ -257,10 +226,6 @@ static void aThread (void* arg) {
   
   // wake up callback
   if (!(thread->inQueue.length)) uv_async_send(&thread->async_watcher);
-  
-#ifdef WWT_PTHREAD
-  return NULL;
-#endif
 }
 
 
@@ -921,15 +886,7 @@ NAN_METHOD(Create) {
     uv_mutex_init(&thread->inQueue.queueLock);
     uv_mutex_init(&thread->outQueue.queueLock);
 
-#ifdef WWT_PTHREAD
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-    int err= pthread_create(&thread->thread, &attr, aThread, thread);
-    pthread_attr_destroy(&attr);
-#else
     int err= uv_thread_create(&thread->thread, aThread, thread);
-#endif
     if (err) {
       //Ha habido un error no se ha arrancado esta thread
       destroyaThread(thread);

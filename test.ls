@@ -1,5 +1,5 @@
 #!/usr/bin/env lsc
-{ Worker } = require './'
+{ Worker } = (require '.')
 w = new Worker ->
   # This also works, but less elegant:
   # ``onmessage`` = (data: {max}) ->

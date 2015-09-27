@@ -36,6 +36,7 @@ scripts:
     ./deps/minifier/bin/minify kLoad_js 1 1          < src/load.js            > src/load.js.c;
   """
 dependencies:
+  bindings: \1.2.x
   nan: \^2.0.9
 dev-dependencies:
   LiveScript: \1.3.x

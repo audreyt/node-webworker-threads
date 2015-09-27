@@ -4,7 +4,6 @@
 
 #include <v8.h>
 #include <node.h>
-//#include <node_object_wrap.h>
 #include <uv.h>
 #include <string.h>
 #include <stdio.h>
@@ -18,7 +17,9 @@
 #include "bson.cc"
 #include "jslib.cc"
 
+#if NODE_MODULE_VERSION > 45
 #include "ArrayBufferAllocator.h"
+#endif
 
 using namespace v8;
 
@@ -199,11 +200,17 @@ static void eventLoop (typeThread* thread);
 // A background thread
 static void aThread (void* arg) {
   typeThread* thread= (typeThread*) arg;
+
+#if NODE_MODULE_VERSION > 45
   // ref: https://developers.google.com/v8/get_started
   ArrayBufferAllocator a;
   v8::Isolate::CreateParams cp;
   cp.array_buffer_allocator = &a;
   thread->isolate= Isolate::New(cp);
+#else
+  thread->isolate= Isolate::New();
+#endif
+
   NanSetIsolateData(thread->isolate, thread);
   
   if (useLocker) {
@@ -218,10 +225,8 @@ static void aThread (void* arg) {
     eventLoop(thread);
   }
   else {
-    //v8::Isolate::Scope isolate_scope(thread->isolate);
     eventLoop(thread);
   }
-  //thread->isolate->Exit(); 
   thread->isolate->Dispose();
   
   // wake up callback
@@ -229,10 +234,6 @@ static void aThread (void* arg) {
 }
 
 
-
-//static Local<Value> threadEmit (const Arguments &info);
-//static Local<Value> postMessage (const Arguments &info);
-//static Local<Value> postError (const Arguments &info);
 
 NAN_METHOD(threadEmit);
 NAN_METHOD(postMessage);
@@ -242,7 +243,6 @@ NAN_METHOD(postError);
 
 static void eventLoop (typeThread* thread) {
   Isolate::Scope isolate_scope(thread->isolate);
-  //thread->isolate->Enter();
   
   {
     Nan::HandleScope scope;
@@ -284,16 +284,13 @@ static void eventLoop (typeThread* thread) {
     threadObject->Set(Nan::New<String>("emit").ToLocalChecked(), Nan::New<FunctionTemplate>(threadEmit)->GetFunction());
     Local<Object> dispatchEvents= Script::Compile(Nan::New<String>(kEvents_js).ToLocalChecked())->Run()->ToObject()->CallAsFunction(threadObject, 0, NULL)->ToObject();
     Local<Object> dispatchNextTicks= Script::Compile(Nan::New<String>(kThread_nextTick_js).ToLocalChecked())->Run()->ToObject();
-    //Local<Array> _ntq= (v8::Array*) *threadObject->Get(Nan::New<String>Symbol("_ntq"));
-    //Local<Array> _ntq = Array::Cast(*threadObject->Get(Nan::New<String>("_ntq")));
+
     Array* _ntq = Array::Cast(*threadObject->Get(Nan::New<String>("_ntq").ToLocalChecked()));
 
     Script::Compile(Nan::New<String>(kLoad_js).ToLocalChecked())->Run();
 
     double nextTickQueueLength= 0;
     long int ctr= 0;
-
-    //SetFatalErrorHandler(FatalErrorCB);
 
     while (!thread->sigkill) {
       typeJob* job;
@@ -508,7 +505,11 @@ static void Callback (uv_async_t *watcher, int revents) {
         if (thread->outQueue.first) {
           uv_async_send(&thread->async_watcher); // wake up callback again
         }
+#if NODE_MODULE_VERSION >= 0x000E
         node::FatalException(thread->isolate, onError);
+#else
+        node::FatalException(onError);
+#endif
         return;
       }
     }

@@ -1,6 +1,6 @@
 {
   "name": "webworker-threads",
-  "version": "0.5.7",
+  "version": "0.5.8-dev",
   "main": "build/Release/WebWorkerThreads.node",
   "description": "Lightweight Web Worker API implementation with native threads",
   "keywords": [

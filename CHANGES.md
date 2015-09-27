@@ -1,3 +1,7 @@
+## 0.5.8-dev
+
+* Support for Node 4.x (@brodybits)
+
 ## 0.5.7
 
 ## Compatibility

@@ -508,7 +508,7 @@ static void Callback (uv_async_t *watcher, int revents) {
         if (thread->outQueue.first) {
           uv_async_send(&thread->async_watcher); // wake up callback again
         }
-        node::FatalException(onError);
+        node::FatalException(thread->isolate, onError);
         return;
       }
     }

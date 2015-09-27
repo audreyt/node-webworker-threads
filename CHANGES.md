@@ -1,5 +1,7 @@
 ## 0.5.8-dev
 
+## Compatibility
+
 * Support for Node 4.x (@brodybits)
 
 ## 0.5.7
@@ -12,7 +14,7 @@
 
 ## Compatibility
 
-* Support for io.js-2.0.0. (@heavyk)
+* Support for io.js-1.0.x/2.0.0. (@heavyk)
 
 ## 0.5.5
 

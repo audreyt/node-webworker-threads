@@ -38,6 +38,8 @@ static int debug_allocs= 0;
 #include "bson.cc"
 #include "jslib.cc"
 
+#include "ArrayBufferAllocator.h"
+
 //using namespace node;
 using namespace v8;
 
@@ -228,7 +230,11 @@ static void aThread (void* arg) {
   pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &dummy);
 
   typeThread* thread= (typeThread*) arg;
-  thread->isolate= Isolate::New();
+  // ref: https://developers.google.com/v8/get_started
+  ArrayBufferAllocator a;
+  v8::Isolate::CreateParams cp;
+  cp.array_buffer_allocator = &a;
+  thread->isolate= Isolate::New(cp);
   NanSetIsolateData(thread->isolate, thread);
   
   if (useLocker) {

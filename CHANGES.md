@@ -1,4 +1,4 @@
-## 0.5.8-dev
+## 0.6.0
 
 ## Compatibility
 

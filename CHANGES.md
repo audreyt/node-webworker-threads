@@ -3,6 +3,7 @@
 ## Compatibility
 
 * Support for Node 4.x (@brodybits)
+* Remove support for Node 0.8.x
 
 ## 0.5.7
 

@@ -41,4 +41,4 @@ dependencies:
 dev-dependencies:
   LiveScript: \1.3.x
 gypfile: true
-engines: { node: '>= 0.8.0' }
+engines: { node: '>= 0.10.16' }

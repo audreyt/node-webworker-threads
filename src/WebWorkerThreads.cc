@@ -187,7 +187,7 @@ NAN_METHOD(Print) {
 	static char end = '\n';
 	fputs(&end, stdout);
 	fflush(stdout);
-	
+
 	//fprintf(stdout, "*** Puts END\n");
     info.GetReturnValue().SetUndefined();
 }
@@ -212,7 +212,7 @@ static void aThread (void* arg) {
 #endif
 
   NanSetIsolateData(thread->isolate, thread);
-  
+
   if (useLocker) {
 	#if (NODE_MODULE_VERSION > 0x000B)
 		v8::Locker myLocker(thread->isolate);
@@ -228,7 +228,7 @@ static void aThread (void* arg) {
     eventLoop(thread);
   }
   thread->isolate->Dispose();
-  
+
   // wake up callback
   if (!(thread->inQueue.length)) uv_async_send(&thread->async_watcher);
 }
@@ -243,11 +243,11 @@ NAN_METHOD(postError);
 
 static void eventLoop (typeThread* thread) {
   Isolate::Scope isolate_scope(thread->isolate);
-  
+
   {
     Nan::HandleScope scope;
     ExtensionConfiguration extensions(0, NULL);
-	
+
     Local<FunctionTemplate> ftmpl = Nan::New<FunctionTemplate>();
 	Local<ObjectTemplate> otmpl = ftmpl->InstanceTemplate();
     Local<Context> ctx =  Nan::New<Context>(&extensions, otmpl);
@@ -301,7 +301,6 @@ static void eventLoop (typeThread* thread) {
         TryCatch onError;
         String::Utf8Value* str;
         Local<String> source;
-        Local<Script> script;
         Local<Value> resultado;
 
 
@@ -328,9 +327,12 @@ static void eventLoop (typeThread* thread) {
               free(job->typeEval.scriptText_CharPtr);
             }
 
-            script= Nan::CompileScript(source).ToLocalChecked();
+            MaybeLocal<Script> script= Nan::CompileScript(source);
 
-            if (!onError.HasCaught()) resultado= Nan::RunScript(script).ToLocalChecked();
+            if (!onError.HasCaught()) {
+              MaybeLocal<Value> result = Nan::RunScript(script.ToLocalChecked());
+              if (!onError.HasCaught()) resultado = result.ToLocalChecked();
+            }
 
             if (job->typeEval.tiene_callBack) {
               job->typeEval.error= onError.HasCaught() ? 1 : 0;
@@ -422,7 +424,7 @@ static void eventLoop (typeThread* thread) {
       }
       uv_mutex_unlock(&thread->IDLE_mutex);
     }
-	
+
   }
 
   thread->context.Reset();
@@ -874,7 +876,7 @@ NAN_METHOD(Create) {
     local_JSObject->Set(Nan::New(id_symbol), Nan::New<Integer>((int32_t)thread->id));
     Nan::SetInternalFieldPointer(local_JSObject, 0, thread);
     thread->JSObject.Reset(local_JSObject);
-	
+
     Local<Value> dispatchEvents= Script::Compile(Nan::New<String>(kEvents_js).ToLocalChecked())->Run()->ToObject()->CallAsFunction(local_JSObject, 0, NULL);
 	Local<Object> local_dispatchEvents = dispatchEvents->ToObject();
     thread->dispatchEvents.Reset(local_dispatchEvents);
@@ -918,7 +920,7 @@ void Init (Handle<Object> target) {
   target->Set(Nan::New<String>("create").ToLocalChecked(), Nan::New<FunctionTemplate>(Create)->GetFunction());
   target->Set(Nan::New<String>("createPool").ToLocalChecked(), Script::Compile(Nan::New<String>(kCreatePool_js).ToLocalChecked())->Run()->ToObject());
   target->Set(Nan::New<String>("Worker").ToLocalChecked(), Script::Compile(Nan::New<String>(kWorker_js).ToLocalChecked())->Run()->ToObject()->CallAsFunction(target, 0, NULL)->ToObject());
-  
+
   Local<String> local_id_symbol = Nan::New<String>("id").ToLocalChecked();
 
   Local<ObjectTemplate> local_threadTemplate = ObjectTemplate::New();

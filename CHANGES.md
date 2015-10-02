@@ -1,3 +1,9 @@
+## 0.6.1
+
+### Bug Fixes
+
+* Fix crash on Node 4.x in the case of `pool.any.eval('undefined_function()')` (@brodybits)
+
 ## 0.6.0
 
 ## Compatibility

@@ -1,6 +1,6 @@
 #!/usr/bin/env lsc -cj
 name: \webworker-threads
-version: \0.6.1-dev
+version: \0.6.1
 main: \index.js
 description: 'Lightweight Web Worker API implementation with native threads'
 keywords: [ 'threads' 'web worker' 'a gogo' ]
@@ -12,6 +12,7 @@ homepage: \https://github.com/audreyt/node-webworker-threads
 bugs:
   url: \http://github.com/audreyt/node-webworker-threads/issues
   email: \audreyt@audreyt.org
+license: "(MIT AND Apache-2.0)"
 licenses: [
     { type: "Apache License, Version 2.0", url: "http://www.apache.org/licenses/LICENSE-2.0" }
     { type: 'MIT', url: "file:LICENSE" }

@@ -327,10 +327,10 @@ static void eventLoop (typeThread* thread) {
               free(job->typeEval.scriptText_CharPtr);
             }
 
-            MaybeLocal<Script> script= Nan::CompileScript(source);
+            Nan::MaybeLocal<Script> script = Nan::CompileScript(source);
 
             if (!onError.HasCaught()) {
-              MaybeLocal<Value> result = Nan::RunScript(script.ToLocalChecked());
+              Nan::MaybeLocal<Value> result = Nan::RunScript(script.ToLocalChecked());
               if (!onError.HasCaught()) resultado = result.ToLocalChecked();
             }
 

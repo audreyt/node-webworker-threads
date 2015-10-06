@@ -1,3 +1,9 @@
+## 0.6.2
+
+### Compatibility
+
+* Restored support for Node 0.10.40 (@smith-kyle)
+
 ## 0.6.1
 
 ### Bug Fixes
@@ -6,26 +12,26 @@
 
 ## 0.6.0
 
-## Compatibility
+### Compatibility
 
 * Support for Node 4.x (@brodybits)
 * Remove support for Node 0.8.x
 
 ## 0.5.7
 
-## Compatibility
+### Compatibility
 
 * Support for io.js-3.3.1. (@marcominetti)
 
 ## 0.5.6
 
-## Compatibility
+### Compatibility
 
 * Support for io.js-1.0.x/2.0.0. (@heavyk)
 
 ## 0.5.5
 
-## Compatibility
+### Compatibility
 
 * Proper support for Node 0.11.x. (@caasi, @senditu, @gitawego)
 

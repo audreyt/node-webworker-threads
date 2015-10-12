@@ -34,14 +34,16 @@
     "url": "http://github.com/audreyt/node-webworker-threads.git"
   },
   "scripts": {
-    "js": "env PATH=./node_modules/.bin:\"$PATH\" lsc -cj package.ls;\ngcc deps/minifier/src/minify.c -o deps/minifier/bin/minify;\nenv PATH=./node_modules/.bin:\"$PATH\" lsc -cbp src/worker.ls                    > src/worker.js;\n./deps/minifier/bin/minify kWorker_js            < src/worker.js          > src/worker.js.c;\nenv PATH=./node_modules/.bin:\"$PATH\" lsc -cbp src/events.ls                    > src/events.js;\n./deps/minifier/bin/minify kEvents_js            < src/events.js          > src/events.js.c;\nenv PATH=./node_modules/.bin:\"$PATH\" lsc -cbp src/createPool.ls                > src/createPool.js;\n./deps/minifier/bin/minify kCreatePool_js        < src/createPool.js      > src/createPool.js.c;\nenv PATH=./node_modules/.bin:\"$PATH\" lsc -cbp src/thread_nextTick.ls           > src/thread_nextTick.js;\n./deps/minifier/bin/minify kThread_nextTick_js 1 < src/thread_nextTick.js > src/thread_nextTick.js.c;\nenv PATH=./node_modules/.bin:\"$PATH\" lsc -cbp src/load.ls                      > src/load.js;\n./deps/minifier/bin/minify kLoad_js 1 1          < src/load.js            > src/load.js.c;"
+    "js": "env PATH=./node_modules/.bin:\"$PATH\" lsc -cj package.ls;\ngcc deps/minifier/src/minify.c -o deps/minifier/bin/minify;\nenv PATH=./node_modules/.bin:\"$PATH\" lsc -cbp src/worker.ls                    > src/worker.js;\n./deps/minifier/bin/minify kWorker_js            < src/worker.js          > src/worker.js.c;\nenv PATH=./node_modules/.bin:\"$PATH\" lsc -cbp src/events.ls                    > src/events.js;\n./deps/minifier/bin/minify kEvents_js            < src/events.js          > src/events.js.c;\nenv PATH=./node_modules/.bin:\"$PATH\" lsc -cbp src/createPool.ls                > src/createPool.js;\n./deps/minifier/bin/minify kCreatePool_js        < src/createPool.js      > src/createPool.js.c;\nenv PATH=./node_modules/.bin:\"$PATH\" lsc -cbp src/thread_nextTick.ls           > src/thread_nextTick.js;\n./deps/minifier/bin/minify kThread_nextTick_js 1 < src/thread_nextTick.js > src/thread_nextTick.js.c;\nenv PATH=./node_modules/.bin:\"$PATH\" lsc -cbp src/load.ls                      > src/load.js;\n./deps/minifier/bin/minify kLoad_js 1 1          < src/load.js            > src/load.js.c;",
+    "test": "node test-package.js"
   },
   "dependencies": {
     "bindings": "1.2.x",
-    "nan": "^2.0.9"
+    "nan": "2.1.x"
   },
   "devDependencies": {
-    "LiveScript": "1.3.x"
+    "LiveScript": "1.3.x",
+    "tap": "2.1.x"
   },
   "gypfile": true,
   "engines": {

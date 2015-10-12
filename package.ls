@@ -36,10 +36,12 @@ scripts:
     env PATH=./node_modules/.bin:"$PATH" lsc -cbp src/load.ls                      > src/load.js;
     ./deps/minifier/bin/minify kLoad_js 1 1          < src/load.js            > src/load.js.c;
   """
+  test: 'tap test-package.js'
 dependencies:
   bindings: \1.2.x
-  nan: \^2.0.9
+  nan: \2.1.x
 dev-dependencies:
   LiveScript: \1.3.x
+  tap: \2.1.x
 gypfile: true
 engines: { node: '>= 0.10.16' }

@@ -1,5 +1,7 @@
 # WebWorker Threads
 
+<img src="https://travis-ci.org/audreyt/node-webworker-threads.svg" />
+
 This is based on @xk (jorgechamorro)'s [Threads A GoGo for Node.js](https://github.com/audreyt/node-threads-a-gogo), but with an API conforming to the [Web Worker standard](http://www.w3.org/TR/workers/).
 
 This module provides an asynchronous, evented and/or continuation passing style API for moving blocking/longish CPU-bound tasks out of Node's event loop to JavaScript threads that run in parallel in the background and that use all the available CPU cores automatically; all from within a single Node process.

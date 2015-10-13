@@ -1,6 +1,6 @@
 # WebWorker Threads
 
-<img src="https://travis-ci.org/audreyt/node-webworker-threads.svg" />
+[![Build Status](https://travis-ci.org/audreyt/node-webworker-threads.svg)](https://travis-ci.org/audreyt/node-webworker-threads)
 
 This is based on @xk (jorgechamorro)'s [Threads A GoGo for Node.js](https://github.com/audreyt/node-threads-a-gogo), but with an API conforming to the [Web Worker standard](http://www.w3.org/TR/workers/).
 

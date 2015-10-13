@@ -1,0 +1,22 @@
+language: node_js
+
+node_js:
+ - "4.2"
+ - "4.1"
+ - "4.0"
+ - "0.12"
+ - "0.11"
+ - "0.10"
+ - "iojs"
+
+install:
+- CXX="g++-4.8" CC="gcc-4.8" npm install
+
+# thanks to http://stackoverflow.com/a/30925448/1283667:
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-4.8
+    - g++-4.8

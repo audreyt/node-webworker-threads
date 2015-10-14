@@ -6,10 +6,7 @@ This is based on @xk (jorgechamorro)'s [Threads A GoGo for Node.js](https://gith
 
 This module provides an asynchronous, evented and/or continuation passing style API for moving blocking/longish CPU-bound tasks out of Node's event loop to JavaScript threads that run in parallel in the background and that use all the available CPU cores automatically; all from within a single Node process.
 
-On Unix (including Linux and OS X), this module requires Node.js 0.8.0+ and a working node-gyp toolchain, which in turn requires make and C/C++.
-For example, on OS X, you could install XCode from Apple, and then use it to install the command line tools (under Preferences -> Downloads).
-
-On Windows, this module requires Node.js 0.9.3+ and a working [node-gyp toolchain](https://github.com/nodejs/node-gyp#installation).
+This module requires Node.js 0.10.0+ and a working [node-gyp toolchain](https://github.com/nodejs/node-gyp#installation).
 
 ## Illustrated Writeup
 

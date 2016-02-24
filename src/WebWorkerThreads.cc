@@ -585,13 +585,11 @@ NAN_METHOD(Destroy) {
   }
 
   if (!thread->sigkill) {
-    //pthread_cancel(thread->thread);
-    thread->sigkill= 1;
-    uv_mutex_lock(&thread->IDLE_mutex);
-    if (thread->IDLE) {
-      uv_cond_signal(&thread->IDLE_cv);
-    }
-    uv_mutex_unlock(&thread->IDLE_mutex);
+#ifdef WIN32
+    TerminateThread(thread->thread, 1);
+#else
+    pthread_cancel(thread->thread);
+#endif
   }
 
   info.GetReturnValue().SetUndefined();

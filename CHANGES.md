@@ -1,3 +1,9 @@
+## 0.6.3
+
+### Bug Fixes
+
+* `.terminate()` now destroys thread immediately (@yufeih)
+
 ## 0.6.2
 
 ### Compatibility

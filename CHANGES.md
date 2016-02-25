@@ -1,3 +1,9 @@
+## 0.7.0
+
+### Bug Fixes
+
+* Green tests by allowing normal exit after `.terminate()`
+
 ## 0.6.3
 
 ### Bug Fixes

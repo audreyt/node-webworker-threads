@@ -585,6 +585,8 @@ NAN_METHOD(Destroy) {
   }
 
   if (!thread->sigkill) {
+    thread->sigkill= 1;
+    destroyaThread(thread);
 #ifdef WIN32
     TerminateThread(thread->thread, 1);
 #else

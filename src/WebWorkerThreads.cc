@@ -447,12 +447,11 @@ static void destroyaThread (typeThread* thread) {
 
   uv_unref((uv_handle_t*)&thread->async_watcher);
 
-  if (freeThreadsQueue) {
-    queue_push(nuItem(kItemTypePointer, thread), freeThreadsQueue);
-  }
-  else {
-    free(thread);
-  }
+#ifdef WIN32
+  TerminateThread(thread->thread, 1);
+#else
+  pthread_cancel(thread->thread);
+#endif
 }
 
 
@@ -587,11 +586,6 @@ NAN_METHOD(Destroy) {
   if (!thread->sigkill) {
     thread->sigkill= 1;
     destroyaThread(thread);
-#ifdef WIN32
-    TerminateThread(thread->thread, 1);
-#else
-    pthread_cancel(thread->thread);
-#endif
   }
 
   info.GetReturnValue().SetUndefined();

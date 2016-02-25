@@ -1,8 +1,9 @@
-## 0.7.0
+## 0.7.1
 
 ### Bug Fixes
 
 * Green tests by allowing normal exit after `.terminate()`
+* Do not reuse threads after `.terminate()`; fixed #62.
 
 ## 0.6.3
 

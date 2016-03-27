@@ -1,6 +1,6 @@
 #!/usr/bin/env lsc -cj
 name: \webworker-threads
-version: \0.6.2
+version: \0.6.4
 main: \index.js
 description: 'Lightweight Web Worker API implementation with native threads'
 keywords: [ 'threads' 'web worker' 'a gogo' ]
@@ -36,7 +36,7 @@ scripts:
     env PATH=./node_modules/.bin:"$PATH" lsc -cbp src/load.ls                      > src/load.js;
     ./deps/minifier/bin/minify kLoad_js 1 1          < src/load.js            > src/load.js.c;
   """
-  test: 'tap test-package.js'
+  test: 'node test-package.js'
 dependencies:
   bindings: \1.2.x
   nan: \2.1.x

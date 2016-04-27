@@ -1,3 +1,9 @@
+## 0.7.2
+
+### Compatibility
+
+* Support for Node 6.0.0.
+
 ## 0.7.1
 
 ### Bug Fixes

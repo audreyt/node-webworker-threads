@@ -297,7 +297,7 @@ static void eventLoop (typeThread* thread) {
       typeQueueItem* qitem;
 
       {
-        //Nan::HandleScope scope;
+        Nan::HandleScope scope;
         TryCatch onError;
         String::Utf8Value* str;
         Local<String> source;

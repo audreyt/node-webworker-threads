@@ -297,7 +297,7 @@ static void eventLoop (typeThread* thread) {
       typeQueueItem* qitem;
 
       {
-        //Nan::HandleScope scope;
+        Nan::HandleScope scope;
         TryCatch onError;
         String::Utf8Value* str;
         Local<String> source;
@@ -388,6 +388,7 @@ static void eventLoop (typeThread* thread) {
           Local<Object> result = deserializer.DeserializeDocument(true)->ToObject();
           int i = 0; do { array->Set(i, result->Get(i)); } while (++i < len);
           free(data);
+          delete bson;
         }
 
             queue_push(qitem, freeJobsQueue);
@@ -558,6 +559,7 @@ static void Callback (uv_async_t *watcher, int revents) {
           Local<Object> result = deserializer.DeserializeDocument(true)->ToObject();
           int i = 0; do { array->Set(i, result->Get(i)); } while (++i < len);
           free(data);
+          delete bson;
         }
 
       queue_push(qitem, freeJobsQueue);
@@ -759,6 +761,7 @@ NAN_METHOD(processEmitSerialized) {
       data.SerializeDocument(object);
       job->typeEventSerialized.buffer= buffer;
       job->typeEventSerialized.bufferSize= object_size;
+      delete bson;
     }
 
   pushToInQueue(qitem, thread);
@@ -797,6 +800,7 @@ NAN_METHOD(processEmitSerialized) {
       data.SerializeDocument(object); \
       job->typeEventSerialized.buffer= buffer; \
       job->typeEventSerialized.bufferSize= object_size; \
+      delete bson; \
     } \
  \
   queue_push(qitem, &thread->outQueue); \

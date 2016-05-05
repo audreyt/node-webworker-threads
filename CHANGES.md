@@ -1,3 +1,9 @@
+## 0.7.4
+
+## Bug Fixes
+
+* Fix memory leak during parameter passing. (@mnahkies)
+
 ## 0.7.3
 
 ### Compatibility

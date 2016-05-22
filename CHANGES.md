@@ -1,3 +1,9 @@
+## 0.7.5
+
+## Documentation Fixes
+
+* Replace all use of process.nextTick() to setImmediate. (@Cyber1000)
+
 ## 0.7.4
 
 ## Bug Fixes

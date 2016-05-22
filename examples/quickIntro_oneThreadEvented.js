@@ -14,5 +14,5 @@ w.onmessage = function cb (event) {
 };
 (function spinForever () {
     process.stdout.write(".");
-    process.nextTick(spinForever);
+    setImmediate(spinForever);
 })();

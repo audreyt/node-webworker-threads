@@ -12,5 +12,5 @@ threadPool.all.eval('fibo(35)', function cb (err, data) {
 
 (function spinForever () {
   process.stdout.write(".");
-  process.nextTick(spinForever);
+  setImmediate(spinForever);
 })();

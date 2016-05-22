@@ -281,7 +281,8 @@ var thread= require('webworker-threads').create();
 thread.eval(fibo).eval('fibo(35)', cb);
 
 (function spinForever () {
-  process.nextTick(spinForever);
+  process.stdout.write(".");
+  setImmediate(spinForever);
 })();
 ```
 
@@ -308,7 +309,7 @@ Threads.create().eval(fibo).eval('fibo(35)', cb);
 Threads.create().eval(fibo).eval('fibo(35)', cb);
 
 (function spinForever () {
-  process.nextTick(spinForever);
+  setImmediate(spinForever);
 })();
 ```
 

@@ -17,5 +17,5 @@ Worker.create().eval(fibo).eval('fibo(35)', cb);
 
 (function spinForever () {
   process.stdout.write(".");
-  process.nextTick(spinForever);
+  setImmediate(spinForever);
 })();

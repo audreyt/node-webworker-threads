@@ -4,10 +4,10 @@ function fibo (n) {
 
 (function fiboLoop () {
   process.stdout.write(fibo(35).toString());
-  process.nextTick(fiboLoop);
+  setImmediate(fiboLoop);
 })();
 
 (function spinForever () {
   process.stdout.write(".");
-  process.nextTick(spinForever);
+  setImmediate(spinForever);
 })();

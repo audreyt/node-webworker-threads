@@ -26,5 +26,5 @@ threadPool.on('theFiboIs', function cb (data) {
 
 (function spinForever () {
   process.stdout.write(".");
-  process.nextTick(spinForever);
+  setImmediate(spinForever);
 })();

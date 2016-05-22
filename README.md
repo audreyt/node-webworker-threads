@@ -54,14 +54,14 @@ for til 5 => (new Worker ->
     @postMessage Math.ceil Math.random! * 30
   ..postMessage Math.ceil Math.random! * 30
 
-do spin = -> process.nextTick spin
+do spin = -> setImmediate spin
 ```
 
 ## Introduction
 
 After the initialization phase of a Node program, whose purpose is to setup listeners and callbacks to be executed in response to events, the next phase, the proper execution of the program, is orchestrated by the event loop whose duty is to [juggle events, listeners and callbacks quickly and without any hiccups nor interruptions that would ruin its performance](https://youtu.be/D0uA_NOb0PE).
 
-Both the event loop and said listeners and callbacks run sequentially in a single thread of execution, Node's main thread. If any of them ever blocks, nothing else will happen for the duration of the block: no more events will be handled, no more callbacks nor listeners nor timeouts nor nextTick()ed functions will have the chance to run and do their job, because they won't be called by the blocked event loop, and the program will turn sluggish at best, or appear to be frozen and dead at worst.
+Both the event loop and said listeners and callbacks run sequentially in a single thread of execution, Node's main thread. If any of them ever blocks, nothing else will happen for the duration of the block: no more events will be handled, no more callbacks nor listeners nor timeouts nor setImmediate()ed functions will have the chance to run and do their job, because they won't be called by the blocked event loop, and the program will turn sluggish at best, or appear to be frozen and dead at worst.
 
 ### What is WebWorker-Threads
 
@@ -239,11 +239,11 @@ Note that everything below this line is under construction and subject to change
     
 ``` javascript
 (function spinForever () {
-  process.nextTick(spinForever);
+  setImmediate(spinForever);
 })();
 ```
 
-**B.-** Here's another program that adds to the one above a fibonacci(35) call in each turn, a CPU-bound task that takes quite a while to complete and that blocks the event loop making it spin slowly and clumsily. The point is simply to show that you can't put a job like that in the event loop because Node will stop performing properly when its event loop can't spin fast and freely due to a callback/listener/nextTick()ed function that's blocking.
+**B.-** Here's another program that adds to the one above a fibonacci(35) call in each turn, a CPU-bound task that takes quite a while to complete and that blocks the event loop making it spin slowly and clumsily. The point is simply to show that you can't put a job like that in the event loop because Node will stop performing properly when its event loop can't spin fast and freely due to a callback/listener/setImmediate()ed function that's blocking.
 
     cat examples/quickIntro_blocking.js
 
@@ -254,11 +254,11 @@ function fibo (n) {
 
 (function fiboLoop () {
   process.stdout.write(fibo(35).toString());
-  process.nextTick(fiboLoop);
+  setImmediate(fiboLoop);
 })();
 
 (function spinForever () {
-  process.nextTick(spinForever);
+  setImmediate(spinForever);
 })();
 ```
 
@@ -331,7 +331,7 @@ threadPool.all.eval('fibo(35)', function cb (err, data) {
 });
 
 (function spinForever () {
-  process.nextTick(spinForever);
+  setImmediate(spinForever);
 })();
 ```
 
@@ -366,7 +366,7 @@ thread.on('theFiboIs', function cb (data) {
 });
 
 (function spinForever () {
-  process.nextTick(spinForever);
+  setImmediate(spinForever);
 })();
 ```
 
@@ -402,7 +402,7 @@ threadPool.on('theFiboIs', function cb (data) {
 });
 
 (function spinForever () {
-  process.nextTick(spinForever);
+  setImmediate(spinForever);
 })();
 ```
 

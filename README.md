@@ -6,6 +6,8 @@ This is based on @xk (jorgechamorro)'s [Threads A GoGo for Node.js](https://gith
 
 This module provides an asynchronous, evented and/or continuation passing style API for moving blocking/longish CPU-bound tasks out of Node's event loop to JavaScript threads that run in parallel in the background and that use all the available CPU cores automatically; all from within a single Node process.
 
+**Note**: If you would like to `require()` native modules in a worker, please consider using [tiny-worker](https://www.npmjs.com/package/tiny-worker) instead.
+
 This module requires Node.js 0.10.0+ and a working [node-gyp toolchain](https://github.com/nodejs/node-gyp#installation).
 
 ## Illustrated Writeup

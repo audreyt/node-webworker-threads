@@ -792,15 +792,16 @@ NAN_METHOD(BSON::BSONDeserialize)
 	}
 	else
 	{
+        Isolate* isolate = Isolate::GetCurrent();
 		// The length of the data for this encoding
-        intptr_t len = DecodeBytes(info[0], BINARY);
+        intptr_t len = DecodeBytes(isolate, info[0], BINARY);
 
 		// Validate that we have at least 5 bytes
         if(len < 5) return Nan::ThrowError("corrupt bson message < 5 bytes long");
 
 		// Let's define the buffer size
 		char* data = (char *)malloc(len);
-        DecodeWrite(data, len, info[0], BINARY);
+        DecodeWrite(isolate, data, len, info[0], BINARY);
 
 		try
 		{
@@ -894,7 +895,8 @@ NAN_METHOD(BSON::BSONSerialize)
 	}
 	else
 	{
-		Local<Value> bin_value = Encode(serialized_object, object_size, BINARY)->ToString();
+        Isolate* isolate = Isolate::GetCurrent();
+		Local<Value> bin_value = Encode(isolate, serialized_object, object_size, BINARY)->ToString();
 		free(serialized_object);
         info.GetReturnValue().Set(bin_value);
 	}

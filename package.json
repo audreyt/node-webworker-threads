@@ -1,6 +1,6 @@
 {
   "name": "webworker-threads",
-  "version": "0.7.5",
+  "version": "0.7.6",
   "main": "index.js",
   "description": "Lightweight Web Worker API implementation with native threads",
   "keywords": [

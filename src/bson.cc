@@ -32,6 +32,7 @@
 	#include <alloca.h>
 #endif
 
+#include "nan.h"
 #include "bson.h"
 
 using namespace v8;

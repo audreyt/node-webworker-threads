@@ -1,4 +1,4 @@
-## 0.7.7
+## 0.7.8
 
 * Fix building on nw and node for Windows 10. (@Demiguise)
 

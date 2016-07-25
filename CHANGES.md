@@ -1,3 +1,7 @@
+## 0.7.7
+
+* Fix building on nw and node for Windows 10. (@Demiguise)
+
 ## 0.7.5
 
 ## Documentation Fixes

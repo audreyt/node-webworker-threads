@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "bindings": "^1.2.1",
-    "nan": "^2.3.3"
+    "nan": "^2.4.0"
   },
   "devDependencies": {
     "livescript": "^1.5.0",

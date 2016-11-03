@@ -163,7 +163,7 @@ threadPool= Threads.createPool( numberOfThreads );
 ##### .all.emit( eventType, eventData [, eventData ... ] )
 `threadPool.all.emit( eventType, eventData [, eventData ... ] )` is like `thread.emit()`, but in all the pool's threads.
 ##### .on( eventType, listener )
-`threadPool.on( eventType, listener )` is like `thread.on()`, registers listeners for events from any of the threads in the pool.
+`threadPool.on( eventType, listener )` is like `thread.on()`, but in all of the pool's threads.
 ##### .totalThreads()
 `threadPool.totalThreads()` returns the number of threads in this pool: as supplied in `.createPool( number )`
 ##### .idleThreads()

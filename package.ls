@@ -39,9 +39,9 @@ scripts:
   test: 'node test-package.js'
 dependencies:
   bindings: \^1.2.1
-  nan: \^2.3.3
+  nan: \^2.4.0
 dev-dependencies:
-  livescript: \^1.4.0
+  livescript: \^1.5.0
   tap: \^5.7.1
 gypfile: true
 engines: { node: '>= 0.10.16' }

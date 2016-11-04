@@ -42,7 +42,7 @@
     "nan": "^2.3.3"
   },
   "devDependencies": {
-    "livescript": "^1.4.0",
+    "livescript": "^1.5.0",
     "tap": "^5.7.1"
   },
   "gypfile": true,

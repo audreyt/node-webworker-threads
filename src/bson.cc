@@ -28,6 +28,11 @@
 #include <limits>
 #include <vector>
 
+#ifdef _WIN32 || _WIN64
+    // For alloca().
+    #include <malloc.h>
+#endif
+
 #if defined(__sun) || defined(_AIX)
 	#include <alloca.h>
 #endif

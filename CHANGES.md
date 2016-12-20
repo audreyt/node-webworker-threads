@@ -1,3 +1,8 @@
+## 0.7.9
+
+* Fix building on Windows. (@yufeih)
+* Upgrade to LiveScript 1.5.0 and Nan 2.4.x. (@brodybits)
+
 ## 0.7.8
 
 * Fix building on nw and node for Windows 10. (@Demiguise)

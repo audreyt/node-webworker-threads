@@ -508,6 +508,9 @@ static void Callback (uv_async_t *watcher, int revents) {
           uv_async_send(&thread->async_watcher); // wake up callback again
         }
 #if NODE_MODULE_VERSION >= 0x000E
+        if (useLocker) {
+          v8::Locker myLocker(thread->isolate);
+        }
         node::FatalException(thread->isolate, onError);
 #else
         node::FatalException(onError);

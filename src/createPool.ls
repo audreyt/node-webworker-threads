@@ -41,7 +41,10 @@ function create-pool (n)
                     next-job t
                     f = job.cb-or-data
                     if typeof f is \function
-                      f.call t, e, d
+                      try
+                        f.call t, e, d
+                      catch e
+                        return e
                     else
                       t.emit job.src-text-or-event-type, f
             else if job.type is 2 # EMIT

@@ -56,7 +56,12 @@ function createPool(n){
           nextJob(t);
           f = job.cbOrData;
           if (typeof f === 'function') {
-            return f.call(t, e, d);
+            try {
+              return f.call(t, e, d);
+            } catch (e$) {
+              e = e$;
+              return e;
+            }
           } else {
             return t.emit(job.srcTextOrEventType, f);
           }

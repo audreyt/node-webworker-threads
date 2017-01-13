@@ -23,9 +23,8 @@
 
 using namespace v8;
 
-static Nan::Persistent<String> id_symbol;
 static Nan::Persistent<ObjectTemplate> threadTemplate;
-static bool useLocker;
+static bool useLocker; /* True if the initial V8 instance had a Locker. We'll follow suit. */
 
 static typeQueue* freeJobsQueue= NULL;
 static typeQueue* freeThreadsQueue= NULL;
@@ -214,11 +213,7 @@ static void aThread (void* arg) {
   NanSetIsolateData(thread->isolate, thread);
 
   if (useLocker) {
-	#if (NODE_MODULE_VERSION > 0x000B)
 		v8::Locker myLocker(thread->isolate);
-	#else
-		v8::Locker myLocker(thread->isolate);
-	#endif
     // I think it's not ok to create a isolate scope here,
     // because it will call Isolate::Exit automatically.
     //v8::Isolate::Scope isolate_scope(thread->isolate);
@@ -261,28 +256,28 @@ static void eventLoop (typeThread* thread) {
 
     Local<Object> fs_obj = Nan::New<Object>();
     JSObjFn(fs_obj, "readFileSync", readFileSync_);
-    global->ForceSet(Nan::New<String>("native_fs_").ToLocalChecked(), fs_obj, attribute_ro_dd);
+    Nan::ForceSet(global, Nan::New<String>("native_fs_").ToLocalChecked(), fs_obj, attribute_ro_dd);
 
     Local<Object> console_obj = Nan::New<Object>();
     JSObjFn(console_obj, "log", console_log);
     JSObjFn(console_obj, "error", console_error);
-    global->ForceSet(Nan::New<String>("console").ToLocalChecked(), console_obj, attribute_ro_dd);
+    Nan::ForceSet(global, Nan::New<String>("console").ToLocalChecked(), console_obj, attribute_ro_dd);
 
-    global->ForceSet(Nan::New<String>("self").ToLocalChecked(), global);
-    global->ForceSet(Nan::New<String>("global").ToLocalChecked(), global);
+    Nan::ForceSet(global, Nan::New<String>("self").ToLocalChecked(), global, v8::None);
+    Nan::ForceSet(global, Nan::New<String>("global").ToLocalChecked(), global, v8::None);
 
-    global->ForceSet(Nan::New<String>("puts").ToLocalChecked(), Nan::New<FunctionTemplate>(Puts)->GetFunction());
-    global->ForceSet(Nan::New<String>("print").ToLocalChecked(), Nan::New<FunctionTemplate>(Print)->GetFunction());
+    Nan::ForceSet(global, Nan::New<String>("puts").ToLocalChecked(), Nan::New<FunctionTemplate>(Puts)->GetFunction(), v8::None);
+    Nan::ForceSet(global, Nan::New<String>("print").ToLocalChecked(), Nan::New<FunctionTemplate>(Print)->GetFunction(), v8::None);
 
-    global->ForceSet(Nan::New<String>("postMessage").ToLocalChecked(), Nan::New<FunctionTemplate>(postMessage)->GetFunction());
-    global->ForceSet(Nan::New<String>("__postError").ToLocalChecked(), Nan::New<FunctionTemplate>(postError)->GetFunction());
+    Nan::ForceSet(global, Nan::New<String>("postMessage").ToLocalChecked(), Nan::New<FunctionTemplate>(postMessage)->GetFunction(), v8::None);
+    Nan::ForceSet(global, Nan::New<String>("__postError").ToLocalChecked(), Nan::New<FunctionTemplate>(postError)->GetFunction(), v8::None);
 
     Local<Object> threadObject= Nan::New<Object>();
-    global->ForceSet(Nan::New<String>("thread").ToLocalChecked(), threadObject);
+    Nan::ForceSet(global, Nan::New<String>("thread").ToLocalChecked(), threadObject, v8::None);
 
     threadObject->Set(Nan::New<String>("id").ToLocalChecked(), Nan::New<Number>(thread->id));
     threadObject->Set(Nan::New<String>("emit").ToLocalChecked(), Nan::New<FunctionTemplate>(threadEmit)->GetFunction());
-    Local<Object> dispatchEvents= Script::Compile(Nan::New<String>(kEvents_js).ToLocalChecked())->Run()->ToObject()->CallAsFunction(threadObject, 0, NULL)->ToObject();
+    Local<Object> dispatchEvents= Nan::CallAsFunction(Script::Compile(Nan::New<String>(kEvents_js).ToLocalChecked())->Run()->ToObject(), threadObject, 0, NULL).ToLocalChecked()->ToObject();
     Local<Object> dispatchNextTicks= Script::Compile(Nan::New<String>(kThread_nextTick_js).ToLocalChecked())->Run()->ToObject();
 
     Array* _ntq = Array::Cast(*threadObject->Get(Nan::New<String>("_ntq").ToLocalChecked()));
@@ -298,7 +293,7 @@ static void eventLoop (typeThread* thread) {
 
       {
         Nan::HandleScope scope;
-        TryCatch onError;
+        Nan::TryCatch onError;
         String::Utf8Value* str;
         Local<String> source;
         Local<Value> resultado;
@@ -368,7 +363,7 @@ static void eventLoop (typeThread* thread) {
 
             free(job->typeEvent.argumentos);
             queue_push(qitem, freeJobsQueue);
-            dispatchEvents->CallAsFunction(global, 2, info);
+            Nan::CallAsFunction(dispatchEvents, global, 2, info);
           }
           else if (job->jobType == kJobTypeEventSerialized) {
             Local<Value> info[2];
@@ -392,7 +387,7 @@ static void eventLoop (typeThread* thread) {
         }
 
             queue_push(qitem, freeJobsQueue);
-            dispatchEvents->CallAsFunction(global, 2, info);
+            Nan::CallAsFunction(dispatchEvents, global, 2, info);
           }
         }
 
@@ -403,7 +398,7 @@ static void eventLoop (typeThread* thread) {
             Nan::IdleNotification(1000);
           }
 
-          resultado= dispatchNextTicks->CallAsFunction(global, 0, NULL);
+          resultado= Nan::CallAsFunction(dispatchNextTicks, global, 0, NULL).ToLocalChecked();
           if (onError.HasCaught()) {
             nextTickQueueLength= 1;
             onError.Reset();
@@ -477,7 +472,7 @@ static void Callback (uv_async_t *watcher, int revents) {
   typeQueueItem* qitem;
   String::Utf8Value* str;
 
-  TryCatch onError;
+  Nan::TryCatch onError;
   while ((qitem= queue_pull(&thread->outQueue))) {
     job= (typeJob*) qitem->asPtr;
 
@@ -493,7 +488,7 @@ static void Callback (uv_async_t *watcher, int revents) {
           argv[0]= null;
           argv[1]= Nan::New<String>(**str, (*str).length()).ToLocalChecked();
         }
-        Nan::New(job->cb)->CallAsFunction(Nan::New(thread->JSObject), 2, argv);
+        Nan::CallAsFunction(Nan::New(job->cb), Nan::New(thread->JSObject), 2, argv);
         job->cb.Reset();
         job->typeEval.tiene_callBack= 0;
 
@@ -507,14 +502,7 @@ static void Callback (uv_async_t *watcher, int revents) {
         if (thread->outQueue.first) {
           uv_async_send(&thread->async_watcher); // wake up callback again
         }
-#if NODE_MODULE_VERSION >= 0x000E
-        if (useLocker) {
-          v8::Locker myLocker(thread->isolate);
-        }
-        node::FatalException(thread->isolate, onError);
-#else
-        node::FatalException(onError);
-#endif
+        Nan::FatalException(onError);
         return;
       }
     }
@@ -541,7 +529,7 @@ static void Callback (uv_async_t *watcher, int revents) {
 
       free(job->typeEvent.argumentos);
       queue_push(qitem, freeJobsQueue);
-      Nan::New(thread->dispatchEvents)->CallAsFunction(Nan::New(thread->JSObject), 2, info);
+      Nan::CallAsFunction(Nan::New(thread->dispatchEvents), Nan::New(thread->JSObject), 2, info);
     }
     else if (job->jobType == kJobTypeEventSerialized) {
       Local<Value> info[2];
@@ -566,7 +554,7 @@ static void Callback (uv_async_t *watcher, int revents) {
         }
 
       queue_push(qitem, freeJobsQueue);
-      Nan::New(thread->dispatchEvents)->CallAsFunction(Nan::New(thread->JSObject), 2, info);
+      Nan::CallAsFunction(Nan::New(thread->dispatchEvents), Nan::New(thread->JSObject), 2, info);
     }
   }
 }
@@ -874,11 +862,12 @@ NAN_METHOD(Create) {
     thread->id= threadsCtr++;
 
     Local<Object> local_JSObject = Nan::New(threadTemplate)->NewInstance();
-    local_JSObject->Set(Nan::New(id_symbol), Nan::New<Integer>((int32_t)thread->id));
+    local_JSObject->Set(Nan::New<String>("id").ToLocalChecked(), Nan::New<Integer>((int32_t)thread->id));
+
     Nan::SetInternalFieldPointer(local_JSObject, 0, thread);
     thread->JSObject.Reset(local_JSObject);
 
-    Local<Value> dispatchEvents= Script::Compile(Nan::New<String>(kEvents_js).ToLocalChecked())->Run()->ToObject()->CallAsFunction(local_JSObject, 0, NULL);
+    Local<Value> dispatchEvents= Nan::CallAsFunction(Script::Compile(Nan::New<String>(kEvents_js).ToLocalChecked())->Run()->ToObject(), local_JSObject, 0, NULL).ToLocalChecked();
 	Local<Object> local_dispatchEvents = dispatchEvents->ToObject();
     thread->dispatchEvents.Reset(local_dispatchEvents);
 
@@ -919,15 +908,14 @@ void Init (Handle<Object> target) {
   useLocker= v8::Locker::IsActive();
 
   target->Set(Nan::New<String>("create").ToLocalChecked(), Nan::New<FunctionTemplate>(Create)->GetFunction());
-  target->Set(Nan::New<String>("createPool").ToLocalChecked(), Script::Compile(Nan::New<String>(kCreatePool_js).ToLocalChecked())->Run()->ToObject());
-  target->Set(Nan::New<String>("Worker").ToLocalChecked(), Script::Compile(Nan::New<String>(kWorker_js).ToLocalChecked())->Run()->ToObject()->CallAsFunction(target, 0, NULL)->ToObject());
+  target->Set(Nan::New<String>("createPool").ToLocalChecked(),
+    Script::Compile(Nan::New<String>(kCreatePool_js).ToLocalChecked())->Run()->ToObject());
+  target->Set(Nan::New<String>("Worker").ToLocalChecked(),
+    Nan::CallAsFunction(Script::Compile(Nan::New<String>(kWorker_js).ToLocalChecked())->Run()->ToObject(), target, 0, NULL).ToLocalChecked()->ToObject());
 
-  Local<String> local_id_symbol = Nan::New<String>("id").ToLocalChecked();
-
-  Local<ObjectTemplate> local_threadTemplate = ObjectTemplate::New();
+  Local<ObjectTemplate> local_threadTemplate = Nan::New<v8::ObjectTemplate>();
   local_threadTemplate->SetInternalFieldCount(1);
-  local_threadTemplate->Set(local_id_symbol, Nan::New<Integer>(0));
-  id_symbol.Reset(local_id_symbol);
+  local_threadTemplate->Set(Nan::New<String>("id").ToLocalChecked(), Nan::New<Integer>(0));
   local_threadTemplate->Set(Nan::New<String>("eval").ToLocalChecked(), Nan::New<FunctionTemplate>(Eval));
   local_threadTemplate->Set(Nan::New<String>("load").ToLocalChecked(), Nan::New<FunctionTemplate>(Load));
   local_threadTemplate->Set(Nan::New<String>("emit").ToLocalChecked(), Nan::New<FunctionTemplate>(processEmit));

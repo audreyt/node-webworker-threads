@@ -23,7 +23,6 @@
 
 using namespace v8;
 
-static Nan::Persistent<String> id_symbol;
 static Nan::Persistent<ObjectTemplate> threadTemplate;
 static bool useLocker; /* True if the initial V8 instance had a Locker. We'll follow suit. */
 
@@ -863,7 +862,8 @@ NAN_METHOD(Create) {
     thread->id= threadsCtr++;
 
     Local<Object> local_JSObject = Nan::New(threadTemplate)->NewInstance();
-    local_JSObject->Set(Nan::New(id_symbol), Nan::New<Integer>((int32_t)thread->id));
+    local_JSObject->Set(Nan::New<String>("id").ToLocalChecked(), Nan::New<Integer>((int32_t)thread->id));
+
     Nan::SetInternalFieldPointer(local_JSObject, 0, thread);
     thread->JSObject.Reset(local_JSObject);
 
@@ -913,12 +913,9 @@ void Init (Handle<Object> target) {
   target->Set(Nan::New<String>("Worker").ToLocalChecked(),
     Nan::CallAsFunction(Script::Compile(Nan::New<String>(kWorker_js).ToLocalChecked())->Run()->ToObject(), target, 0, NULL).ToLocalChecked()->ToObject());
 
-  Local<String> local_id_symbol = Nan::New<String>("id").ToLocalChecked();
-
-  Local<ObjectTemplate> local_threadTemplate = Nan::New<ObjectTemplate>();
+  Local<ObjectTemplate> local_threadTemplate = Nan::New<v8::ObjectTemplate>();
   local_threadTemplate->SetInternalFieldCount(1);
-  local_threadTemplate->Set(local_id_symbol, Nan::New<Integer>(0));
-  id_symbol.Reset(local_id_symbol);
+  local_threadTemplate->Set(Nan::New<String>("id").ToLocalChecked(), Nan::New<Integer>(0));
   local_threadTemplate->Set(Nan::New<String>("eval").ToLocalChecked(), Nan::New<FunctionTemplate>(Eval));
   local_threadTemplate->Set(Nan::New<String>("load").ToLocalChecked(), Nan::New<FunctionTemplate>(Load));
   local_threadTemplate->Set(Nan::New<String>("emit").ToLocalChecked(), Nan::New<FunctionTemplate>(processEmit));

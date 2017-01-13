@@ -873,7 +873,6 @@ NAN_METHOD(Create) {
     thread->id= threadsCtr++;
 
     Local<Object> local_JSObject = Nan::New(threadTemplate)->NewInstance();
-
     local_JSObject->Set(Nan::New<String>("id").ToLocalChecked(), Nan::New<Integer>((int32_t)thread->id));
 
     Nan::SetInternalFieldPointer(local_JSObject, 0, thread);

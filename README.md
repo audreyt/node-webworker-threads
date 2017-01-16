@@ -227,6 +227,10 @@ Same as `console.log`, except it prints to stderr.
 ##### puts(arg1 [, arg2 ...])
 `puts(arg1 [, arg2 ...])` converts .toString()s and prints its arguments to stdout.
 
+## Developer guide
+
+See the [developer guide](https://github.com/audreyt/node-webworker-threads/wiki) if you want to contribute.
+
 -----------
 WIP WIP WIP
 -----------

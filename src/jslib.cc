@@ -21,10 +21,12 @@
 
 static const PropertyAttribute attribute_ro_dd = (PropertyAttribute)(ReadOnly | DontDelete);
 static const PropertyAttribute attribute_ro_de_dd = (PropertyAttribute)(ReadOnly | DontEnum | DontDelete);
-#define JSObjFn(obj, name, fnname) \
-    obj->ForceSet(Nan::New<String>(name).ToLocalChecked(), Nan::New<FunctionTemplate>(fnname)->GetFunction(), attribute_ro_dd);
 
-static void ReportException(TryCatch* try_catch) {
+// 'obj.name = fnname' with PropertyAttribute attribute_ro_dd.
+#define JSObjFn(obj, name, fnname) \
+    Nan::ForceSet(obj, Nan::New<String>(name).ToLocalChecked(), Nan::New<FunctionTemplate>(fnname)->GetFunction(), attribute_ro_dd);
+
+static void ReportException(Nan::TryCatch* try_catch) {
     Nan::HandleScope scope;
 
 	String::Utf8Value exception(try_catch->Exception());
@@ -55,13 +57,13 @@ static void ReportException(TryCatch* try_catch) {
 		for (int i = 0; i < start; i++) {
 			putchar(' ');
 		}
-		int end = message->GetEndColumn();
+		int end = Nan::GetEndColumn(message).FromJust();
 		for (int i = start; i < end; i++) {
 			putchar('^');
 		}
 		putchar('\n');
 
-		String::Utf8Value stack_trace(try_catch->StackTrace());
+		String::Utf8Value stack_trace(try_catch->StackTrace().ToLocalChecked());
 		if (stack_trace.length() > 0) {
 			printf("%s\n", *stack_trace);
 		}
@@ -156,7 +158,7 @@ static inline void console_common_1(const Local<Value> &v, FILE* fd, const int d
 NAN_METHOD(console_log) {
     Nan::HandleScope scope;
 	
-	TryCatch trycatch;
+	Nan::TryCatch trycatch;
 	
     for (int i=0, n=info.Length(); i<n; ++i) {
         console_common_1(info[i], stdout, 0);
@@ -172,7 +174,7 @@ NAN_METHOD(console_log) {
 NAN_METHOD(console_error) {
     Nan::HandleScope scope;
 	
-	TryCatch trycatch;
+	Nan::TryCatch trycatch;
 	
     for (int i=0, n=info.Length(); i<n; ++i) {
         console_common_1(info[i], stderr, 0);

@@ -214,11 +214,7 @@ static void aThread (void* arg) {
   NanSetIsolateData(thread->isolate, thread);
 
   if (useLocker) {
-	#if (NODE_MODULE_VERSION > 0x000B)
 		v8::Locker myLocker(thread->isolate);
-	#else
-		v8::Locker myLocker(thread->isolate);
-	#endif
     // I think it's not ok to create a isolate scope here,
     // because it will call Isolate::Exit automatically.
     //v8::Isolate::Scope isolate_scope(thread->isolate);
@@ -507,14 +503,7 @@ static void Callback (uv_async_t *watcher, int revents) {
         if (thread->outQueue.first) {
           uv_async_send(&thread->async_watcher); // wake up callback again
         }
-#if NODE_MODULE_VERSION >= 0x000E
-        if (useLocker) {
-          v8::Locker myLocker(thread->isolate);
-        }
         Nan::FatalException(onError);
-#else
-        Nan::FatalException(onError);
-#endif
         return;
       }
     }

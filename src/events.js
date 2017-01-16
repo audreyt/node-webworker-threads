@@ -16,7 +16,7 @@ function DispatchEvents(thread){
     }
     return thread;
   }, this.removeAllListeners = function(e){
-    if (arguments_.length) {
+    if (e) {
       delete thread._on[e];
     } else {
       thread._on = {};

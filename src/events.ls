@@ -8,7 +8,7 @@ function DispatchEvents (thread)
             if q.once then q.once.push f else q.once = [f]
             return thread
         remove-all-listeners: (e) ->
-            if arguments_.length then delete! thread._on[e] else thread._on = {}
+            if e then delete! thread._on[e] else thread._on = {}
             return thread
         dispatch-events: (event, args, q, i, len) ->
             if q = thread._on[event] => try

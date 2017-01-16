@@ -214,11 +214,7 @@ static void aThread (void* arg) {
   NanSetIsolateData(thread->isolate, thread);
 
   if (useLocker) {
-	#if (NODE_MODULE_VERSION > 0x000B)
 		v8::Locker myLocker(thread->isolate);
-	#else
-		v8::Locker myLocker(thread->isolate);
-	#endif
     // I think it's not ok to create a isolate scope here,
     // because it will call Isolate::Exit automatically.
     //v8::Isolate::Scope isolate_scope(thread->isolate);

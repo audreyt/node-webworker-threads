@@ -1,3 +1,4 @@
 threads_a_gogo.node
 build
 .lock-wscript
+lib/binding

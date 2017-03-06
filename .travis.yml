@@ -1,20 +1,63 @@
 language: node_js
 
-node_js:
- - "7.0"
- - "6.9"
- - "4.6"
- - "0.12"
- - "0.10"
+sudo: false
 
-install:
-- CXX="g++-4.8" CC="gcc-4.8" npm install
+os:
+  - linux
+  - osx
 
-# thanks to http://stackoverflow.com/a/30925448/1283667:
+env:
+  global:
+    - secure: KrnF6XWHwqwvy+m2VRltpJv7/8UfvcAAKFBxkhoB62YfZMx/4Qur9Gzzi9/U+Ulxb8VDUbDP7rmmqo90kEENcSbjgnKv0XYjWMVz/8+6MVnf8lDGY6B7+NVHu8KnmVElHYjjZUt8iuwN/0E1jThXvFS8f9B6sz7kl/oq4xJwpQi5mcY5nT2gTY3fLGru7V7+GrJ0Ukg2fkw3DrFC9YZnLJCqNzVS9vOyJZwvn7ZkoeJOw68MkqxedKlmDqa5uUbfSNFqJyd3OGKw1P61tf40cql1vxPZ/k42hlTv/Dc/mZ700Pc4PVdGPz9B/DN3neB9J82fCu2iyeJ/WaaOfm8hLf9nFjO46fpvrNmS/dW6ZMkWgE/HN9LmJPKpiD6fNM5/Lb2pOEP2zFT+lWLq0q/w46+qKnd0FbK/I+EkBG9cP5ei03Zr7EMlgRd13papfcixPPhD75vFxOyjNS3NtulOLVOXLBXyXf2fnCvcJijblz1pdll3CUvS8Ohh/f/oSS6gVp6EGQlzg4a9FlW/ZwxbPvsGy/YJbIFGJCCt0neFEe4SNTb/kc1GieckwWNyaTaE2QxBlkApkKbcYDkFZI6HdUneTH1kf6D7ZjTx5GiiB6BaOZp/yApxJn7cpwQuZGYb67+9A/yqQAfgtDcxHi3CQKge3Y5qJc7zEfMB9UkJZjw=
+
+# enable c++11/14 builds
 addons:
   apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-    - gcc-4.8
-    - g++-4.8
+    sources: ['ubuntu-toolchain-r-test']
+    packages: ['g++-4.8']
+
+node_js:
+- '7'
+- '6'
+- '4'
+- '0.12'
+- '0.10'
+
+before_install:
+# Use gcc 4.8 on linux and clang on osx
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CXX=g++-4.8; fi
+# get commit message
+- COMMIT_MESSAGE=$(git show -s --format=%B $TRAVIS_COMMIT | tr -d '\n')
+# put local node-pre-gyp and node-pre-gyp-github on PATH
+- export PATH=./node_modules/.bin/:$PATH
+# put global node-gyp on PATH
+- npm install node-gyp -g
+# figure out if we should publish
+- PUBLISH_BINARY=false
+# if we are building a tag then publish
+- if [[ $TRAVIS_BRANCH == `git describe --tags --always HEAD` ]]; then PUBLISH_BINARY=true; fi;
+# or if we put [publish binary] in the commit message
+- if test "${COMMIT_MESSAGE#*'[publish binary]'}" != "$COMMIT_MESSAGE"; then PUBLISH_BINARY=true; fi;
+
+install:
+# ensure source install works
+- npm install --build-from-source
+# test our module
+- node index.js
+
+before_script:
+# if publishing, do it
+- if [[ $PUBLISH_BINARY == true ]]; then node-pre-gyp package; node-pre-gyp-github publish --release; fi;
+# cleanup
+- node-pre-gyp clean
+- node-gyp clean
+
+script:
+# if publishing, test installing from remote
+- if [[ $PUBLISH_BINARY == true ]]; then npm install --fallback-to-build=false; fi;
+# If success then we arrive here so lets clean up
+- node-pre-gyp clean
+
+after_success:
+# if success then query and display all published binaries
+- node-pre-gyp info

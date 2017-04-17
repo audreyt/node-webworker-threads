@@ -56,7 +56,7 @@
     "module_path": "./lib/binding/{node_abi}-{platform}-{arch}",
     "package_name": "{node_abi}-{platform}-{arch}.tar.gz",
     "host": "https://github.com/tptee/node-webworker-threads/releases/download/",
-    "remote_path": "{version}"
+    "remote_path": "v{version}"
   },
   "gypfile": true,
   "engines": {

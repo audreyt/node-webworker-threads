@@ -1,5 +1,5 @@
 {
-  "name": "webworker-threads",
+  "name": "@tptee/webworker-threads",
   "version": "0.7.11",
   "main": "index.js",
   "description": "Lightweight Web Worker API implementation with native threads",

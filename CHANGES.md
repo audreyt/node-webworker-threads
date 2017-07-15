@@ -1,3 +1,8 @@
+## 0.7.12
+
+* Resolve compiler warnings on Node v7 (@davisjam)
+* Fix err handling propagation.
+
 ## 0.7.9
 
 * Fix building on Windows. (@yufeih)

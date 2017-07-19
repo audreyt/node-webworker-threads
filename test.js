@@ -3,23 +3,8 @@
   var Worker, w, slice$ = [].slice;
   Worker = require('./').Worker;
   w = new Worker(function(){
-    return this.onmessage = function(arg$){
-      var max, i$, n, j$, to$, i;
-      max = arg$.data.max;
-      search: for (i$ = 2; i$ <= max; ++i$) {
-        n = i$;
-        for (j$ = 2, to$ = Math.sqrt(n); j$ <= to$; ++j$) {
-          i = j$;
-          if (!(n % i)) {
-            continue search;
-          }
-        }
-        postMessage({
-          result: n
-        });
-      }
-      throw 'done';
-    };
+    importScripts('test-imported-script.js');
+    return this.onmessage = foo;
   });
   w.onmessage = function(arg$){
     var result;

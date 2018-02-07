@@ -36,7 +36,8 @@ scripts:
     env PATH=./node_modules/.bin:"$PATH" lsc -cbp src/load.ls                      > src/load.js;
     ./deps/minifier/bin/minify kLoad_js 1 1          < src/load.js            > src/load.js.c;
   """
-  test: 'node test-package.js'
+  pretest: 'npm run js'
+  test: './run-all-tests.sh'
 dependencies:
   bindings: \^1.2.1
   nan: \^2.4.0

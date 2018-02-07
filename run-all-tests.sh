@@ -2,6 +2,8 @@
 
 OUTPUT="./run-all-tests-output.log"
 
+exit_code=0
+
 node ./test-package.js > ${OUTPUT}
 
 _term() {
@@ -21,5 +23,8 @@ for filename in ./test/*.js; do
         echo ${filename} "passed!"
     else
         echo ${filename} "failed!"
+        exit_code=1
     fi
 done
+
+exit ${exit_code}

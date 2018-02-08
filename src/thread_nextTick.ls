@@ -8,6 +8,7 @@ function ThreadNextTick
             try
                 while true
                     _ntq[p]!
+                    l = _ntq.length
                     break unless ++p < l
             catch e
                 thread._ntq = _ntq.slice ++p

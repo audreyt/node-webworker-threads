@@ -1,6 +1,9 @@
 //2011-11 Proyectos Equis Ka, s.l., jorge@jorgechamorro.com
 //WebWorkerThreads.cc
 
+// Modified By LostAbaddon
+// 2018.02.08   
+// Add setImmediate functon and timers.
 
 #include <v8.h>
 #include <node.h>
@@ -11,7 +14,6 @@
 #include <string>
 #include "nan.h"
 #include "nan_isolate_data_accessor.h"
-
 
 #include "queues_a_gogo.cc"
 #include "bson.cc"
@@ -88,7 +90,6 @@ typedef struct {
 } typeJob;
 
 /*
-
 cd deps/minifier/src
 gcc minify.c -o minify
 cat ../../../src/events.js | ./minify kEvents_js > ../../../src/kEvents_js
@@ -96,7 +97,6 @@ cat ../../../src/load.js | ./minify kLoad_js > ../../../src/kLoad_js
 cat ../../../src/createPool.js | ./minify kCreatePool_js > ../../../src/kCreatePool_js
 cat ../../../src/worker.js | ./minify kWorker_js > ../../../src/kWorker_js
 cat ../../../src/thread_nextTick.js | ./minify kThread_nextTick_js > ../../../src/kThread_nextTick_js
-
 */
 
 #include "events.js.c"
@@ -104,15 +104,9 @@ cat ../../../src/thread_nextTick.js | ./minify kThread_nextTick_js > ../../../sr
 #include "createPool.js.c"
 #include "worker.js.c"
 #include "thread_nextTick.js.c"
+#include "thread_timer.js.c"
 
 //node-waf configure uninstall distclean configure build install
-
-
-
-
-
-
-
 
 static typeQueueItem* nuJobQueueItem (void) {
   typeQueueItem* qitem= queue_pull(freeJobsQueue);
@@ -121,11 +115,6 @@ static typeQueueItem* nuJobQueueItem (void) {
   }
   return qitem;
 }
-
-
-
-
-
 
 static typeThread* isAThread (Local<Object> receiver) {
   typeThread* thread;
@@ -142,11 +131,6 @@ static typeThread* isAThread (Local<Object> receiver) {
   return NULL;
 }
 
-
-
-
-
-
 static void pushToInQueue (typeQueueItem* qitem, typeThread* thread) {
   uv_mutex_lock(&thread->IDLE_mutex);
   queue_push(qitem, &thread->inQueue);
@@ -155,11 +139,6 @@ static void pushToInQueue (typeQueueItem* qitem, typeThread* thread) {
   }
   uv_mutex_unlock(&thread->IDLE_mutex);
 }
-
-
-
-
-
 
 NAN_METHOD(Puts) {
   Nan::HandleScope scope;
@@ -171,28 +150,23 @@ NAN_METHOD(Puts) {
   }
   fflush(stdout);
 
-  //fprintf(stdout, "*** Puts END\n");
   info.GetReturnValue().SetUndefined();
 }
 
 NAN_METHOD(Print) {
-    Nan::HandleScope scope;
-	int i= 0;
-    while (i < info.Length()) {
-        String::Utf8Value c_str(info[i]);
-		fputs(*c_str, stdout);
-		i++;
-	}
-	static char end = '\n';
-	fputs(&end, stdout);
-	fflush(stdout);
+  Nan::HandleScope scope;
+  int i= 0;
+  while (i < info.Length()) {
+    String::Utf8Value c_str(info[i]);
+    fputs(*c_str, stdout);
+    i++;
+  }
+  static char end = '\n';
+  fputs(&end, stdout);
+  fflush(stdout);
 
-	//fprintf(stdout, "*** Puts END\n");
-    info.GetReturnValue().SetUndefined();
+  info.GetReturnValue().SetUndefined();
 }
-
-
-
 
 static void eventLoop (typeThread* thread);
 
@@ -213,7 +187,7 @@ static void aThread (void* arg) {
   NanSetIsolateData(thread->isolate, thread);
 
   if (useLocker) {
-		v8::Locker myLocker(thread->isolate);
+    v8::Locker myLocker(thread->isolate);
     // I think it's not ok to create a isolate scope here,
     // because it will call Isolate::Exit automatically.
     //v8::Isolate::Scope isolate_scope(thread->isolate);
@@ -228,13 +202,9 @@ static void aThread (void* arg) {
   if (!(thread->inQueue.length)) uv_async_send(&thread->async_watcher);
 }
 
-
-
 NAN_METHOD(threadEmit);
 NAN_METHOD(postMessage);
 NAN_METHOD(postError);
-
-
 
 static void eventLoop (typeThread* thread) {
   Isolate::Scope isolate_scope(thread->isolate);
@@ -244,13 +214,12 @@ static void eventLoop (typeThread* thread) {
     ExtensionConfiguration extensions(0, NULL);
 
     Local<FunctionTemplate> ftmpl = Nan::New<FunctionTemplate>();
-	Local<ObjectTemplate> otmpl = ftmpl->InstanceTemplate();
+    Local<ObjectTemplate> otmpl = ftmpl->InstanceTemplate();
     Local<Context> ctx =  Nan::New<Context>(&extensions, otmpl);
 
-	//thread->context= Context::New();
+    // thread->context= Context::New();
     thread->context.Reset(ctx);
-	ctx->Enter();
-
+    ctx->Enter();
 
     Local<Object> global= Nan::New(thread->context)->Global();
 
@@ -279,15 +248,20 @@ static void eventLoop (typeThread* thread) {
     threadObject->Set(Nan::New<String>("emit").ToLocalChecked(), Nan::New<FunctionTemplate>(threadEmit)->GetFunction());
     Local<Object> dispatchEvents= Nan::CallAsFunction(Script::Compile(Nan::New<String>(kEvents_js).ToLocalChecked())->Run()->ToObject(), threadObject, 0, NULL).ToLocalChecked()->ToObject();
     Local<Object> dispatchNextTicks= Script::Compile(Nan::New<String>(kThread_nextTick_js).ToLocalChecked())->Run()->ToObject();
+    Local<Object> dispatchSetImmediate= Script::Compile(Nan::New<String>(kThread_timer_js).ToLocalChecked())->Run()->ToObject();
 
     Array* _ntq = Array::Cast(*threadObject->Get(Nan::New<String>("_ntq").ToLocalChecked()));
+    Array* _nlp = Array::Cast(*threadObject->Get(Nan::New<String>("_nlp").ToLocalChecked()));
 
     Script::Compile(Nan::New<String>(kLoad_js).ToLocalChecked())->Run();
 
     double nextTickQueueLength= 0;
+    double nextLoopQueueLength= 0;
     long int ctr= 0;
+    long int ctq= 0;
 
     while (!thread->sigkill) {
+      // printf("EventLoop Running...\n");
       typeJob* job;
       typeQueueItem* qitem;
 
@@ -298,20 +272,34 @@ static void eventLoop (typeThread* thread) {
         Local<String> source;
         Local<Value> resultado;
 
+        // printf("Before Loop: %i, %f\n", _nlp->Length(), nextLoopQueueLength);
+        if (_nlp->Length()) {
+          if ((++ctq) > 2e3) {
+            ctq= 0;
+            Nan::IdleNotification(1000);
+          }
+
+          resultado= Nan::CallAsFunction(dispatchSetImmediate, global, 0, NULL).ToLocalChecked();
+          if (onError.HasCaught()) {
+            nextLoopQueueLength= 1;
+            onError.Reset();
+          }
+          else {
+            nextLoopQueueLength= resultado->NumberValue();
+            // printf("Inside Loop: %i, %f\n", _nlp->Length(), nextLoopQueueLength);
+          }
+        }
 
         while ((qitem= queue_pull(&thread->inQueue))) {
-
           job= (typeJob*) qitem->asPtr;
 
           if ((++ctr) > 2e3) {
             ctr= 0;
             Nan::IdleNotification(1000);
-
           }
 
           if (job->jobType == kJobTypeEval) {
             //Ejecutar un texto
-
             if (job->typeEval.useStringObject) {
               str= job->typeEval.scriptText_StringObject;
               source= Nan::New<String>(**str, (*str).length()).ToLocalChecked();
@@ -344,7 +332,6 @@ static void eventLoop (typeThread* thread) {
           }
           else if (job->jobType == kJobTypeEvent) {
             //Emitir evento.
-
             Local<Value> info[2];
             str= job->typeEvent.eventName;
             info[0]= Nan::New<String>(**str, (*str).length()).ToLocalChecked();
@@ -371,28 +358,25 @@ static void eventLoop (typeThread* thread) {
             info[0]= Nan::New<String>(**str, (*str).length()).ToLocalChecked();
             delete str;
 
-      int len = job->typeEventSerialized.length;
-      Local<Array> array= Nan::New<Array>(len);
-      info[1]= array;
-
-        {
-          BSON *bson = new BSON();
-          char* data = job->typeEventSerialized.buffer;
-          size_t size = job->typeEventSerialized.bufferSize;
-          BSONDeserializer deserializer(bson, data, size);
-          Local<Object> result = deserializer.DeserializeDocument(true)->ToObject();
-          int i = 0; do { array->Set(i, result->Get(i)); } while (++i < len);
-          free(data);
-          delete bson;
-        }
-
+            int len = job->typeEventSerialized.length;
+            Local<Array> array= Nan::New<Array>(len);
+            info[1]= array;
+            {
+              BSON *bson = new BSON();
+              char* data = job->typeEventSerialized.buffer;
+              size_t size = job->typeEventSerialized.bufferSize;
+              BSONDeserializer deserializer(bson, data, size);
+              Local<Object> result = deserializer.DeserializeDocument(true)->ToObject();
+              int i = 0; do { array->Set(i, result->Get(i)); } while (++i < len);
+              free(data);
+              delete bson;
+            }
             queue_push(qitem, freeJobsQueue);
             Nan::CallAsFunction(dispatchEvents, global, 2, info);
           }
         }
 
         if (_ntq->Length()) {
-
           if ((++ctr) > 2e3) {
             ctr= 0;
             Nan::IdleNotification(1000);
@@ -405,11 +389,13 @@ static void eventLoop (typeThread* thread) {
           }
           else {
             nextTickQueueLength= resultado->NumberValue();
+            // printf("Inside Tick: %i, %f\n", _ntq->Length(), nextTickQueueLength);
           }
         }
       }
 
-      if (nextTickQueueLength || thread->inQueue.length) continue;
+      // printf("End: %f, %f, %u, %li\n", nextTickQueueLength, nextLoopQueueLength, _nlp->Length(), thread->inQueue.length);
+      if (nextTickQueueLength || nextLoopQueueLength || _nlp->Length() || thread->inQueue.length) continue;
       if (thread->sigkill) break;
 
       uv_mutex_lock(&thread->IDLE_mutex);
@@ -420,16 +406,9 @@ static void eventLoop (typeThread* thread) {
       }
       uv_mutex_unlock(&thread->IDLE_mutex);
     }
-
   }
-
   thread->context.Reset();
 }
-
-
-
-
-
 
 static void destroyaThread (typeThread* thread) {
   Nan::HandleScope scope;
@@ -442,18 +421,12 @@ static void destroyaThread (typeThread* thread) {
   thread->JSObject.Reset();
 
   uv_unref((uv_handle_t*)&thread->async_watcher);
-
 #ifdef WIN32
   TerminateThread(thread->thread, 1);
 #else
   pthread_cancel(thread->thread);
 #endif
 }
-
-
-
-
-
 
 // C callback that runs in the main nodejs thread. This is the one responsible for
 // calling the thread's JS callback.
@@ -477,7 +450,6 @@ static void Callback (uv_async_t *watcher, int revents) {
     job= (typeJob*) qitem->asPtr;
 
     if (job->jobType == kJobTypeEval) {
-
       if (job->typeEval.tiene_callBack) {
         str= job->typeEval.resultado;
 
@@ -512,9 +484,6 @@ static void Callback (uv_async_t *watcher, int revents) {
       }
     }
     else if (job->jobType == kJobTypeEvent) {
-
-      //fprintf(stdout, "*** Callback\n");
-
       Local<Value> info[2];
 
       str= job->typeEvent.eventName;
@@ -547,27 +516,22 @@ static void Callback (uv_async_t *watcher, int revents) {
       Local<Array> array= Nan::New<Array>(len);
       info[1]= array;
 
-        {
-          BSON *bson = new BSON();
-          char* data = job->typeEventSerialized.buffer;
-          size_t size = job->typeEventSerialized.bufferSize;
-          BSONDeserializer deserializer(bson, data, size);
-          Local<Object> result = deserializer.DeserializeDocument(true)->ToObject();
-          int i = 0; do { array->Set(i, result->Get(i)); } while (++i < len);
-          free(data);
-          delete bson;
-        }
+      {
+        BSON *bson = new BSON();
+        char* data = job->typeEventSerialized.buffer;
+        size_t size = job->typeEventSerialized.bufferSize;
+        BSONDeserializer deserializer(bson, data, size);
+        Local<Object> result = deserializer.DeserializeDocument(true)->ToObject();
+        int i = 0; do { array->Set(i, result->Get(i)); } while (++i < len);
+        free(data);
+        delete bson;
+      }
 
       queue_push(qitem, freeJobsQueue);
       Nan::CallAsFunction(Nan::New(thread->dispatchEvents), Nan::New(thread->JSObject), 2, info);
     }
   }
 }
-
-
-
-
-
 
 // unconditionally destroys a thread by brute force.
 NAN_METHOD(Destroy) {
@@ -588,11 +552,6 @@ NAN_METHOD(Destroy) {
 
   info.GetReturnValue().SetUndefined();
 }
-
-
-
-
-
 
 // Eval: Pushes a job into the thread's ->inQueue.
 NAN_METHOD(Eval){
@@ -623,10 +582,6 @@ NAN_METHOD(Eval){
   info.GetReturnValue().Set(info.This());
 }
 
-
-
-
-
 static char* readFile (Local<String> path) {
   v8::String::Utf8Value c_str(path);
   FILE* fp= fopen(*c_str, "rb");
@@ -651,11 +606,6 @@ static char* readFile (Local<String> path) {
   */
   return buf;
 }
-
-
-
-
-
 
 // Load: Loads from file and passes to Eval
 NAN_METHOD(Load) {
@@ -689,11 +639,6 @@ NAN_METHOD(Load) {
 
   info.GetReturnValue().Set(info.This());
 }
-
-
-
-
-
 
 NAN_METHOD(processEmit) {
   Nan::HandleScope scope;
@@ -744,21 +689,21 @@ NAN_METHOD(processEmitSerialized) {
   Local<Array> array= Nan::New<Array>(len-1);
   int i = 1; do { array->Set(i-1, info[i]); } while (++i < len);
 
-    {
-      char* buffer;
-      BSON *bson = new BSON();
-      size_t object_size;
-      Local<Object> object = bson->GetSerializeObject(array);
-      BSONSerializer<CountStream> counter(bson, false, false);
-      counter.SerializeDocument(object);
-      object_size = counter.GetSerializeSize();
-      buffer = (char *)malloc(object_size);
-      BSONSerializer<DataStream> data(bson, false, false, buffer);
-      data.SerializeDocument(object);
-      job->typeEventSerialized.buffer= buffer;
-      job->typeEventSerialized.bufferSize= object_size;
-      delete bson;
-    }
+  {
+    char* buffer;
+    BSON *bson = new BSON();
+    size_t object_size;
+    Local<Object> object = bson->GetSerializeObject(array);
+    BSONSerializer<CountStream> counter(bson, false, false);
+    counter.SerializeDocument(object);
+    object_size = counter.GetSerializeSize();
+    buffer = (char *)malloc(object_size);
+    BSONSerializer<DataStream> data(bson, false, false, buffer);
+    data.SerializeDocument(object);
+    job->typeEventSerialized.buffer= buffer;
+    job->typeEventSerialized.bufferSize= object_size;
+    delete bson;
+  }
 
   pushToInQueue(qitem, thread);
 
@@ -783,21 +728,21 @@ NAN_METHOD(processEmitSerialized) {
   Local<Array> array= Nan::New<Array>(len); \
   int i = 0; do { array->Set(i, info[i]); } while (++i < len); \
  \
-    { \
-      char* buffer; \
-      BSON *bson = new BSON(); \
-      size_t object_size; \
-      Local<Object> object = bson->GetSerializeObject(array); \
-      BSONSerializer<CountStream> counter(bson, false, false); \
-      counter.SerializeDocument(object); \
-      object_size = counter.GetSerializeSize(); \
-      buffer = (char *)malloc(object_size); \
-      BSONSerializer<DataStream> data(bson, false, false, buffer); \
-      data.SerializeDocument(object); \
-      job->typeEventSerialized.buffer= buffer; \
-      job->typeEventSerialized.bufferSize= object_size; \
-      delete bson; \
-    } \
+  { \
+    char* buffer; \
+    BSON *bson = new BSON(); \
+    size_t object_size; \
+    Local<Object> object = bson->GetSerializeObject(array); \
+    BSONSerializer<CountStream> counter(bson, false, false); \
+    counter.SerializeDocument(object); \
+    object_size = counter.GetSerializeSize(); \
+    buffer = (char *)malloc(object_size); \
+    BSONSerializer<DataStream> data(bson, false, false, buffer); \
+    data.SerializeDocument(object); \
+    job->typeEventSerialized.buffer= buffer; \
+    job->typeEventSerialized.bufferSize= object_size; \
+    delete bson; \
+  } \
  \
   queue_push(qitem, &thread->outQueue); \
   if (!(thread->inQueue.length)) uv_async_send(&thread->async_watcher); \
@@ -840,13 +785,6 @@ NAN_METHOD(threadEmit) {
   info.GetReturnValue().Set(info.This());
 }
 
-
-
-
-
-
-
-
 // Creates and launches a new isolate in a new background thread.
 NAN_METHOD(Create) {
     Nan::HandleScope scope;
@@ -873,7 +811,7 @@ NAN_METHOD(Create) {
     thread->JSObject.Reset(local_JSObject);
 
     Local<Value> dispatchEvents= Nan::CallAsFunction(Script::Compile(Nan::New<String>(kEvents_js).ToLocalChecked())->Run()->ToObject(), local_JSObject, 0, NULL).ToLocalChecked();
-	Local<Object> local_dispatchEvents = dispatchEvents->ToObject();
+    Local<Object> local_dispatchEvents = dispatchEvents->ToObject();
     thread->dispatchEvents.Reset(local_dispatchEvents);
 
     uv_async_init(uv_default_loop(), &thread->async_watcher, reinterpret_cast<uv_async_cb>(Callback));
@@ -895,15 +833,14 @@ NAN_METHOD(Create) {
     info.GetReturnValue().Set(Nan::New(thread->JSObject));
 }
 
-
 #if NODE_MODULE_VERSION >= 0x000E
-void Init (Handle<Object> target, Handle<Value> module, void *) {
+void Init (Handle<Object> target, Handle<Value> module, void *)
 #elif NODE_MODULE_VERSION >= 0x000B
-void Init (Handle<Object> target, Handle<Value> module) {
+void Init (Handle<Object> target, Handle<Value> module)
 #else
-void Init (Handle<Object> target) {
+void Init (Handle<Object> target)
 #endif
-
+{
   initQueues();
   freeThreadsQueue= nuQueue(-3);
   freeJobsQueue= nuQueue(-4);
@@ -912,7 +849,8 @@ void Init (Handle<Object> target) {
 
   useLocker= v8::Locker::IsActive();
 
-  target->Set(Nan::New<String>("create").ToLocalChecked(), Nan::New<FunctionTemplate>(Create)->GetFunction());
+  target->Set(Nan::New<String>("create").ToLocalChecked(),
+    Nan::New<FunctionTemplate>(Create)->GetFunction());
   target->Set(Nan::New<String>("createPool").ToLocalChecked(),
     Script::Compile(Nan::New<String>(kCreatePool_js).ToLocalChecked())->Run()->ToObject());
   target->Set(Nan::New<String>("Worker").ToLocalChecked(),
@@ -928,9 +866,6 @@ void Init (Handle<Object> target) {
   local_threadTemplate->Set(Nan::New<String>("destroy").ToLocalChecked(), Nan::New<FunctionTemplate>(Destroy));
   threadTemplate.Reset(local_threadTemplate);
 }
-
-
-
 
 NODE_MODULE(WebWorkerThreads, Init)
 

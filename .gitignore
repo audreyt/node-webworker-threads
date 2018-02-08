@@ -5,3 +5,4 @@ node_modules
 npm-debug.log
 deps/minifier/bin/minify
 run-all-tests-output.log
+package-lock.json

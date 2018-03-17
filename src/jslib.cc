@@ -24,7 +24,7 @@ static const PropertyAttribute attribute_ro_de_dd = (PropertyAttribute)(ReadOnly
 
 // 'obj.name = fnname' with PropertyAttribute attribute_ro_dd.
 #define JSObjFn(obj, name, fnname) \
-    Nan::ForceSet(obj, Nan::New<String>(name).ToLocalChecked(), Nan::New<FunctionTemplate>(fnname)->GetFunction(), (PropertyAttribute)(DontDelete));
+    Nan::DefineOwnProperty(obj, Nan::New<String>(name).ToLocalChecked(), Nan::New<FunctionTemplate>(fnname)->GetFunction(), (PropertyAttribute)(DontDelete));
 
 static void ReportException(Nan::TryCatch* try_catch) {
     Nan::HandleScope scope;

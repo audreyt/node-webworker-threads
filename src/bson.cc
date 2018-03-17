@@ -431,7 +431,7 @@ Local<Value> BSONDeserializer::DeserializeDocumentInternal(bool promoteLongs)
 		if(name->IsNull()) ThrowAllocatedStringException(64, "Bad BSON Document: illegal CString");
 		// name->Is
         const Local<Value>& value = DeserializeValue(type, promoteLongs);
-		Nan::ForceSet(returnObject, name, value, v8::None);
+		Nan::DefineOwnProperty(returnObject, name.As<v8::String>(), value, v8::None);
 	}
 	if(p != pEnd) ThrowAllocatedStringException(64, "Bad BSON Document: Serialize consumed unexpected number of bytes");
 
@@ -687,7 +687,7 @@ void BSON::Initialize(v8::Local<v8::Object> target)
 
     constructor_template.Reset(t);
 
-    Nan::ForceSet(target, Nan::New<String>("BSON").ToLocalChecked(), t->GetFunction(), v8::None);
+    Nan::DefineOwnProperty(target, Nan::New<String>("BSON").ToLocalChecked(), t->GetFunction(), v8::None);
 }
 
 // Create a new instance of BSON and passing it the existing context

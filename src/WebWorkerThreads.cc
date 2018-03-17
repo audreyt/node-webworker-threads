@@ -225,24 +225,24 @@ static void eventLoop (typeThread* thread) {
 
     Local<Object> fs_obj = Nan::New<Object>();
     JSObjFn(fs_obj, "readFileSync", readFileSync_);
-    Nan::ForceSet(global, Nan::New<String>("native_fs_").ToLocalChecked(), fs_obj, attribute_ro_dd);
+    Nan::DefineOwnProperty(global, Nan::New<String>("native_fs_").ToLocalChecked(), fs_obj, attribute_ro_dd);
 
     Local<Object> console_obj = Nan::New<Object>();
     JSObjFn(console_obj, "log", console_log);
     JSObjFn(console_obj, "error", console_error);
-    Nan::ForceSet(global, Nan::New<String>("console").ToLocalChecked(), console_obj, attribute_ro_dd);
+    Nan::DefineOwnProperty(global, Nan::New<String>("console").ToLocalChecked(), console_obj, attribute_ro_dd);
 
-    Nan::ForceSet(global, Nan::New<String>("self").ToLocalChecked(), global, v8::None);
-    Nan::ForceSet(global, Nan::New<String>("global").ToLocalChecked(), global, v8::None);
+    Nan::DefineOwnProperty(global, Nan::New<String>("self").ToLocalChecked(), global, v8::None);
+    Nan::DefineOwnProperty(global, Nan::New<String>("global").ToLocalChecked(), global, v8::None);
 
-    Nan::ForceSet(global, Nan::New<String>("puts").ToLocalChecked(), Nan::New<FunctionTemplate>(Puts)->GetFunction(), v8::None);
-    Nan::ForceSet(global, Nan::New<String>("print").ToLocalChecked(), Nan::New<FunctionTemplate>(Print)->GetFunction(), v8::None);
+    Nan::DefineOwnProperty(global, Nan::New<String>("puts").ToLocalChecked(), Nan::New<FunctionTemplate>(Puts)->GetFunction(), v8::None);
+    Nan::DefineOwnProperty(global, Nan::New<String>("print").ToLocalChecked(), Nan::New<FunctionTemplate>(Print)->GetFunction(), v8::None);
 
-    Nan::ForceSet(global, Nan::New<String>("postMessage").ToLocalChecked(), Nan::New<FunctionTemplate>(postMessage)->GetFunction(), v8::None);
-    Nan::ForceSet(global, Nan::New<String>("__postError").ToLocalChecked(), Nan::New<FunctionTemplate>(postError)->GetFunction(), v8::None);
+    Nan::DefineOwnProperty(global, Nan::New<String>("postMessage").ToLocalChecked(), Nan::New<FunctionTemplate>(postMessage)->GetFunction(), v8::None);
+    Nan::DefineOwnProperty(global, Nan::New<String>("__postError").ToLocalChecked(), Nan::New<FunctionTemplate>(postError)->GetFunction(), v8::None);
 
     Local<Object> threadObject= Nan::New<Object>();
-    Nan::ForceSet(global, Nan::New<String>("thread").ToLocalChecked(), threadObject, v8::None);
+    Nan::DefineOwnProperty(global, Nan::New<String>("thread").ToLocalChecked(), threadObject, v8::None);
 
     threadObject->Set(Nan::New<String>("id").ToLocalChecked(), Nan::New<Number>(thread->id));
     threadObject->Set(Nan::New<String>("emit").ToLocalChecked(), Nan::New<FunctionTemplate>(threadEmit)->GetFunction());

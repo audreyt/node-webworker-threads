@@ -1,6 +1,6 @@
 #!/usr/bin/env lsc -cj
 name: \webworker-threads
-version: \0.7.11
+version: \0.7.13
 main: \index.js
 description: 'Lightweight Web Worker API implementation with native threads'
 keywords: [ 'threads' 'web worker' 'a gogo' ]
@@ -36,10 +36,11 @@ scripts:
     env PATH=./node_modules/.bin:"$PATH" lsc -cbp src/load.ls                      > src/load.js;
     ./deps/minifier/bin/minify kLoad_js 1 1          < src/load.js            > src/load.js.c;
   """
-  test: 'node test-package.js'
+  pretest: 'npm run js && node-gyp rebuild'
+  test: './run-all-tests.sh'
 dependencies:
-  bindings: \^1.2.1
-  nan: \^2.4.0
+  bindings: \^1.3.0
+  nan: \^2.8.0
 dev-dependencies:
   livescript: \^1.5.0
   tap: \^5.7.1

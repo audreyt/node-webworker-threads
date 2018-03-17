@@ -1,3 +1,13 @@
+## 0.7.13
+
+* Allows overriding of console.log, console.error, fs.readFileSync (@ncthbrt)
+* Fixes a tiny memory leak in BSON destruction. (@823639792)
+
+## 0.7.12
+
+* Resolve compiler warnings on Node v7 (@davisjam)
+* Fix err handling propagation.
+
 ## 0.7.9
 
 * Fix building on Windows. (@yufeih)

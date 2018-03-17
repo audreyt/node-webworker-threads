@@ -1,6 +1,6 @@
 {
-  "name": "@tptee/webworker-threads",
-  "version": "0.7.11",
+  "name": "webworker-threads",
+  "version": "0.7.13",
   "main": "index.js",
   "description": "Lightweight Web Worker API implementation with native threads",
   "keywords": [
@@ -36,13 +36,14 @@
   "scripts": {
     "install": "node-pre-gyp install --fallback-to-build",
     "js": "env PATH=./node_modules/.bin:\"$PATH\" lsc -cj package.ls;\ngcc deps/minifier/src/minify.c -o deps/minifier/bin/minify;\nenv PATH=./node_modules/.bin:\"$PATH\" lsc -cbp src/worker.ls                    > src/worker.js;\n./deps/minifier/bin/minify kWorker_js            < src/worker.js          > src/worker.js.c;\nenv PATH=./node_modules/.bin:\"$PATH\" lsc -cbp src/events.ls                    > src/events.js;\n./deps/minifier/bin/minify kEvents_js            < src/events.js          > src/events.js.c;\nenv PATH=./node_modules/.bin:\"$PATH\" lsc -cbp src/createPool.ls                > src/createPool.js;\n./deps/minifier/bin/minify kCreatePool_js        < src/createPool.js      > src/createPool.js.c;\nenv PATH=./node_modules/.bin:\"$PATH\" lsc -cbp src/thread_nextTick.ls           > src/thread_nextTick.js;\n./deps/minifier/bin/minify kThread_nextTick_js 1 < src/thread_nextTick.js > src/thread_nextTick.js.c;\nenv PATH=./node_modules/.bin:\"$PATH\" lsc -cbp src/load.ls                      > src/load.js;\n./deps/minifier/bin/minify kLoad_js 1 1          < src/load.js            > src/load.js.c;",
-    "test": "node test-package.js"
+    "pretest": "npm run js && node-gyp rebuild",
+    "test": "./run-all-tests.sh"
   },
   "dependencies": {
-    "bindings": "^1.2.1",
-    "nan": "^2.4.0",
     "node-pre-gyp": "^0.6.33",
     "node-pre-gyp-github": "^1.3.1"
+    "bindings": "^1.3.0",
+    "nan": "^2.8.0"
   },
   "bundledDependencies": [
     "node-pre-gyp"

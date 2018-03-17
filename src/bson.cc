@@ -637,6 +637,38 @@ BSON::BSON() : ObjectWrap()
         maxKeyString.Reset(Nan::New<String>("MaxKey").ToLocalChecked());
 }
 
+BSON::~BSON() {
+	_bsontypeString.Reset();
+	_longLowString.Reset();
+	_longHighString.Reset();
+	_objectIDidString.Reset();
+	_binaryPositionString.Reset();
+	_binarySubTypeString.Reset();
+	_binaryBufferString.Reset();
+	_doubleValueString.Reset();
+	_symbolValueString.Reset();
+	_dbRefRefString.Reset();
+	_dbRefIdRefString.Reset();
+	_dbRefDbRefString.Reset();
+	_dbRefNamespaceString.Reset();
+	_dbRefDbString.Reset();
+	_dbRefOidString.Reset();
+	_codeCodeString.Reset();
+	_codeScopeString.Reset();
+	_toBSONString.Reset();
+
+	longString.Reset();
+	objectIDString.Reset();
+	binaryString.Reset();
+	codeString.Reset();
+	dbrefString.Reset();
+	symbolString.Reset();
+	doubleString.Reset();
+	timestampString.Reset();
+	minKeyString.Reset();
+	maxKeyString.Reset();
+}
+
 void BSON::Initialize(v8::Local<v8::Object> target)
 {
 	// Grab the scope of the call from Node

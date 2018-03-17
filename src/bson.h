@@ -46,7 +46,7 @@ template<typename T> class BSONSerializer;
 class BSON : public ObjectWrap {
 public:
 	BSON();
-	~BSON() {}
+	~BSON();
 
     static void Initialize(Local<Object> target);
         static NAN_METHOD(BSONDeserializeStream);

@@ -202,7 +202,7 @@ static void aThread (void* arg) {
 
 #if NODE_MODULE_VERSION > 45
   // ref: https://developers.google.com/v8/get_started
-  ArrayBufferAllocator a;
+  WebWorkerThreads::ArrayBufferAllocator a;
   v8::Isolate::CreateParams cp;
   cp.array_buffer_allocator = &a;
   thread->isolate= Isolate::New(cp);

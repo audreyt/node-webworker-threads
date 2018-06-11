@@ -1,5 +1,6 @@
 // from: https://developers.google.com/v8/get_started
 
+namespace WebWorkerThreads {
 class ArrayBufferAllocator : public v8::ArrayBuffer::Allocator {
  public:
   virtual void* Allocate(size_t length) {
@@ -9,3 +10,4 @@ class ArrayBufferAllocator : public v8::ArrayBuffer::Allocator {
   virtual void* AllocateUninitialized(size_t length) { return malloc(length); }
   virtual void Free(void* data, size_t) { free(data); }
 };
+}

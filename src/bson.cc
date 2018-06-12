@@ -427,11 +427,11 @@ Local<Value> BSONDeserializer::DeserializeDocumentInternal(bool promoteLongs)
 	while(HasMoreData())
 	{
 		BsonType type = (BsonType) ReadByte();
-        Local<Value>& name = ReadCString();
+        const Local<Value>& name = ReadCString();
 		if(name->IsNull()) ThrowAllocatedStringException(64, "Bad BSON Document: illegal CString");
 		// name->Is
         const Local<Value>& value = DeserializeValue(type, promoteLongs);
-		Nan::DefineOwnProperty(returnObject, name.As<v8::String>(), value, v8::None);
+		Nan::DefineOwnProperty(returnObject, ((Local<Value>&)name).As<v8::String>(), value, v8::None);
 	}
 	if(p != pEnd) ThrowAllocatedStringException(64, "Bad BSON Document: Serialize consumed unexpected number of bytes");
 

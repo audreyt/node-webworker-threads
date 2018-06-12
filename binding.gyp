@@ -7,10 +7,12 @@
       ],
       "cflags!": [
         "-fno-exceptions",
+        "-fpermissive",
         "-DV8_USE_UNSAFE_HANDLES"
       ],
       "cflags_cc!": [
         "-fno-exceptions",
+        "-fpermissive",
         "-DV8_USE_UNSAFE_HANDLES"
       ],
       "include_dirs": [

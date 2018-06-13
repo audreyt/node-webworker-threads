@@ -31,10 +31,10 @@ export interface Worker {
 export interface Thread {
 	readonly id: number;
 	// thread.load( absolutePath [, cb] ) reads the file at absolutePath and thread.eval(fileContents, cb).
-	load(absolutePath: string, cb?: CallBack): this;
+	load(absolutePath: string, cb?: (this: Thread, err: any, data: any) => void): this;
 
 	// thread.eval( program [, cb]) converts program.toString() and eval()s it in the thread's global context, and (if provided) returns the completion value to cb(err, completionValue).
-	eval<T extends { toString(): string; }>(program: T, cb?: CallBack): this;
+	eval<T extends { toString(): string; }>(program: T, cb?: (this: Thread, err: any, data: any) => void): this;
 
 	// thread.on( eventType, listener ) registers the listener listener(data) for any events of eventType that the thread thread may emit.
 	on(eventType: string, listener: (data: any) => void): this;
@@ -54,11 +54,11 @@ export interface Thread {
 
 export interface ThreadPool {
 	// threadPool.load( absolutePath [, cb] ) runs thread.load( absolutePath [, cb] ) in all the pool's threads.
-	load(absolutePath: string, cb?: CallBack): void;
+	load(absolutePath: string, cb?: (this: Thread, err: any, data: any) => void): void;
 
 	readonly any: {
 		// threadPool.any.eval( program, cb ) is like thread.eval(), but in any of the pool's threads.
-		eval(program: any, cb?: CallBack): void;
+		eval(program: any, cb?: (this: Thread, err: any, data: any) => void): void;
 
 		// threadPool.any.emit( eventType, eventData [, eventData ... ] ) is like thread.emit(), but in any of the pool's threads.
 		emit(eventType: string, ...eventData: any[]): void;
@@ -66,7 +66,7 @@ export interface ThreadPool {
 
 	readonly all: {
 		// threadPool.all.eval( program, cb ) is like thread.eval(), but in all the pool's threads.
-		eval(program: any, cb?: CallBack): void;
+		eval(program: any, cb?: (this: Thread, err: any, data: any) => void): void;
 
 		// threadPool.all.emit( eventType, eventData [, eventData ... ] ) is like thread.emit(), but in all the pool's threads.
 		emit(eventType: string, ...eventData: any[]): void;

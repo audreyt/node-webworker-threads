@@ -54,27 +54,27 @@ export interface Thread {
 
 export interface ThreadPool {
 	// threadPool.load( absolutePath [, cb] ) runs thread.load( absolutePath [, cb] ) in all the pool's threads.
-	load(absolutePath: string, cb?: (this: Thread, err: any, data: any) => void): void;
+	load(absolutePath: string, cb?: (this: Thread, err: any, data: any) => void): this;
 
 	readonly any: {
 		// threadPool.any.eval( program, cb ) is like thread.eval(), but in any of the pool's threads.
-		eval(program: any, cb?: (this: Thread, err: any, data: any) => void): void;
+		eval(program: any, cb?: (this: Thread, err: any, data: any) => void): ThreadPool;
 
 		// threadPool.any.emit( eventType, eventData [, eventData ... ] ) is like thread.emit(), but in any of the pool's threads.
-		emit(eventType: string, ...eventData: any[]): void;
+		emit(eventType: string, ...eventData: any[]): ThreadPool;
 	}
 
 	readonly all: {
 		// threadPool.all.eval( program, cb ) is like thread.eval(), but in all the pool's threads.
-		eval(program: any, cb?: (this: Thread, err: any, data: any) => void): void;
+		eval(program: any, cb?: (this: Thread, err: any, data: any) => void): ThreadPool;
 
 		// threadPool.all.emit( eventType, eventData [, eventData ... ] ) is like thread.emit(), but in all the pool's threads.
-		emit(eventType: string, ...eventData: any[]): void;
+		emit(eventType: string, ...eventData: any[]): ThreadPool;
 	}
 
 
 	// threadPool.on( eventType, listener ) is like thread.on(), but in all of the pool's threads.
-	on(eventType: string, listener: CallBack): void;
+	on(eventType: string, listener: CallBack): this;
 
 	// threadPool.totalThreads() returns the number of threads in this pool: as supplied in .createPool( number )
 	totalThreads(): number;

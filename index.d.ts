@@ -31,7 +31,7 @@ export interface Worker {
 export interface Thread {
 	readonly id: number;
 	// thread.load( absolutePath [, cb] ) reads the file at absolutePath and thread.eval(fileContents, cb).
-	load(absolutePath: string, cb?: (this: Thread, err: any, data: any) => void): this;
+	load(absolutePath: string, cb?: (this: Thread, err: any, data: any) => void): void;
 
 	// thread.eval( program [, cb]) converts program.toString() and eval()s it in the thread's global context, and (if provided) returns the completion value to cb(err, completionValue).
 	eval<T extends { toString(): string; }>(program: T, cb?: (this: Thread, err: any, data: any) => void): this;

@@ -1,3 +1,9 @@
+## 0.7.16
+
+* Fix Windows load delay validation for Node v10.x. (@garymathews)
+* Add TypeScript definition. (@taoqf)
+* Fix compilation on Node v10.x. (@nicholasc)
+
 ## 0.7.13
 
 * Allows overriding of console.log, console.error, fs.readFileSync (@ncthbrt)

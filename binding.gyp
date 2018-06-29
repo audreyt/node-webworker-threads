@@ -16,7 +16,7 @@
       "include_dirs": [
         "<!(node -e \"require('nan')\")"
       ],
-      "win_delay_load_hook": "<!(node -e \"var v = process.version.substring(1,2); console.log(v > 0 && v < 4);\")",
+      "win_delay_load_hook": "<!(node -e \"var v = process.version.substring(1).split('.')[0]; console.log(v > 0 && v < 4);\")",
       "conditions": [
         [
           "OS==\"mac\"",

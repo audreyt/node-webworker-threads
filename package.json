@@ -1,6 +1,6 @@
 {
   "name": "webworker-threads",
-  "version": "0.7.16",
+  "version": "0.7.17",
   "main": "index.js",
   "description": "Lightweight Web Worker API implementation with native threads",
   "keywords": [
@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "bindings": "^1.3.0",
-    "nan": "^2.8.0"
+    "nan": "^2.11.0"
   },
   "devDependencies": {
     "livescript": "^1.5.0",

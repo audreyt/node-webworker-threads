@@ -1,3 +1,7 @@
+## 0.7.17
+
+* Fix Node 10.9.0 compatibility. (@vtrphan)
+
 ## 0.7.16
 
 * Fix Windows load delay validation for Node v10.x. (@garymathews)

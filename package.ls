@@ -33,6 +33,7 @@ scripts:
     ./deps/minifier/bin/minify kCreatePool_js        < src/createPool.js      > src/createPool.js.c;
     env PATH=./node_modules/.bin:"$PATH" lsc -cbp src/thread_nextTick.ls           > src/thread_nextTick.js;
     ./deps/minifier/bin/minify kThread_nextTick_js 1 < src/thread_nextTick.js > src/thread_nextTick.js.c;
+    env PATH=./node_modules/.bin:"$PATH" ./deps/minifier/bin/minify kThread_timer_js 1 < src/thread_timer.js > src/thread_timer.js.c;
     env PATH=./node_modules/.bin:"$PATH" lsc -cbp src/load.ls                      > src/load.js;
     ./deps/minifier/bin/minify kLoad_js 1 1          < src/load.js            > src/load.js.c;
   """

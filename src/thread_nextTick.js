@@ -11,6 +11,7 @@ function ThreadNextTick(){
       try {
         for (;;) {
           _ntq[p]();
+          l = _ntq.length;
           if (!(++p < l)) {
             break;
           }

@@ -684,8 +684,6 @@ NAN_METHOD(Load) {
     return Nan::ThrowTypeError("thread.load(): the receiver must be a thread object");
   }
 
-  printf("::::::::: readFile__(%s)\n", *String::Utf8Value(Local<String>::Cast(info[0])));//DEBUG
-
   char* source= readFile(info[0]->ToString());  //@Bruno: here we don't know if the file was not found or if it was an empty file
   if (!source) info.GetReturnValue().Set(info.This()); //@Bruno: even if source is empty, we should call the callback ?
 
@@ -937,7 +935,6 @@ void Init (Handle<Object> target) {
   Local<Object> processModule = require->Call(Nan::New<Object>(), 1, args3).As<Object>();
   Local<Function> cwd = processModule->Get(Nan::New<String>("cwd").ToLocalChecked()).As<Function>();
   Local<String> workingDirname = cwd->Call(processModule, 0, NULL).As<String>();
-  printf("::::::::: workingDirname1:  %s\n", *String::Utf8Value(Local<String>::Cast(workingDirname)));//DEBUG
   workingDir = new String::Utf8Value(workingDirname);
 #endif
 

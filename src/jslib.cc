@@ -74,8 +74,6 @@ static void ReportException(Nan::TryCatch* try_catch) {
 NAN_METHOD(readFileSync_) {
     Nan::HandleScope scope;
 
-	printf(":::::::::::::::::: readFileSync_(%s)\n", *String::Utf8Value(Local<String>::Cast(info[0])));//DEBUG
-	
     FILE *f = fopen(*String::Utf8Value(Local<String>::Cast(info[0])), "rb");
 	if (f == NULL) {
 		char str[256];

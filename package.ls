@@ -1,6 +1,6 @@
 #!/usr/bin/env lsc -cj
 name: \webworker-threads
-version: \0.7.17
+version: \0.8.0
 main: \index.js
 description: 'Lightweight Web Worker API implementation with native threads'
 keywords: [ 'threads' 'web worker' 'a gogo' ]
@@ -40,9 +40,9 @@ scripts:
   test: './run-all-tests.sh'
 dependencies:
   bindings: \^1.3.0
-  nan: \^2.11.0
+  nan: \^2.12.1
 dev-dependencies:
-  livescript: \^1.5.0
+  livescript: \^1.6.0
   tap: \^5.7.1
 gypfile: true
 engines: { node: '>= 0.10.16' }

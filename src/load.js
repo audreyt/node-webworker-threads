@@ -7,9 +7,25 @@ function close(){
   return this.thread.emit('close');
 }
 function importScripts(){
-  var i$, len$, p, results$ = [];
+  var pos, i$, len$, p, escAbsolute, results$ = [];
+  pos = -1;
+  if (this.thread.__filename) {
+    pos = this.thread.__filename.lastIndexOf('/');
+    if (pos === -1) {
+      pos = this.thread.__filename.lastIndexOf('\\');
+    }
+  }
   for (i$ = 0, len$ = (arguments).length; i$ < len$; ++i$) {
     p = (arguments)[i$];
+    if (pos >= 0 && !/^(?:[a-z]+:)?\/\//i.test(p)) {
+      if (p[0] === '!') {
+        escAbsolute = p[1] !== '!';
+        p = p.substring(1);
+      }
+      if (!escAbsolute && (!this.thread.__cwd || p.indexOf(this.thread.__cwd) !== 0)) {
+        p = this.thread.__filename.substring(0, pos + 1) + p;
+      }
+    }
     results$.push(self.eval(native_fs_.readFileSync(p, 'utf8')));
   }
   return results$;

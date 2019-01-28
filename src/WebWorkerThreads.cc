@@ -29,6 +29,8 @@ static bool useLocker; /* True if the initial V8 instance had a Locker. We'll fo
 static typeQueue* freeJobsQueue= NULL;
 static typeQueue* freeThreadsQueue= NULL;
 
+static String::Utf8Value* workingDir = NULL;//MOD
+
 #define kThreadMagicCookie 0x99c0ffee
 typedef struct {
   uv_async_t async_watcher; //MUST be the first one
@@ -79,6 +81,7 @@ typedef struct {
       int tiene_callBack;
       int useStringObject;
       String::Utf8Value* resultado;
+      String::Utf8Value* scriptLocation_StringObject;
       union {
         char* scriptText_CharPtr;
         String::Utf8Value* scriptText_StringObject;
@@ -298,6 +301,8 @@ static void eventLoop (typeThread* thread) {
         Local<String> source;
         Local<Value> resultado;
 
+        Local<String> location;
+        Local<String> cwd;
 
         while ((qitem= queue_pull(&thread->inQueue))) {
 
@@ -320,6 +325,15 @@ static void eventLoop (typeThread* thread) {
             else {
               source= Nan::New<String>(job->typeEval.scriptText_CharPtr).ToLocalChecked();
               free(job->typeEval.scriptText_CharPtr);
+
+              str= job->typeEval.scriptLocation_StringObject;
+              location = Nan::New<String>(**str, (*str).length()).ToLocalChecked();
+              delete str;
+              threadObject->Set(Nan::New<String>("__filename").ToLocalChecked(), location);
+              if(workingDir) {
+                cwd = Nan::New<String>(**workingDir, (*workingDir).length()).ToLocalChecked();
+                threadObject->Set(Nan::New<String>("__cwd").ToLocalChecked(), cwd);
+              }
             }
 
             Nan::MaybeLocal<Script> script = Nan::CompileScript(source);
@@ -685,6 +699,8 @@ NAN_METHOD(Load) {
   job->typeEval.useStringObject= 0;
   job->jobType= kJobTypeEval;
 
+  job->typeEval.scriptLocation_StringObject = new String::Utf8Value(info[0]);
+
   pushToInQueue(qitem, thread);
 
   info.GetReturnValue().Set(info.This());
@@ -911,6 +927,16 @@ void Init (Handle<Object> target) {
   Nan::HandleScope scope;
 
   useLocker= v8::Locker::IsActive();
+
+#if NODE_MODULE_VERSION >= 0x000B
+  Local<Object> mod = Local<Object>::Cast(module);
+  Local<Function> require = Local<Function>::Cast(mod->Get(Nan::New<String>("require").ToLocalChecked()));
+  Local<Value> args3[] = {Nan::New<String>("process").ToLocalChecked()};
+  Local<Object> processModule = require->Call(Nan::New<Object>(), 1, args3).As<Object>();
+  Local<Function> cwd = processModule->Get(Nan::New<String>("cwd").ToLocalChecked()).As<Function>();
+  Local<String> workingDirname = cwd->Call(processModule, 0, NULL).As<String>();
+  workingDir = new String::Utf8Value(workingDirname);
+#endif
 
   target->Set(Nan::New<String>("create").ToLocalChecked(), Nan::New<FunctionTemplate>(Create)->GetFunction());
   target->Set(Nan::New<String>("createPool").ToLocalChecked(),

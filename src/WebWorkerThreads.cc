@@ -280,12 +280,12 @@ static void eventLoop (typeThread* thread) {
 
     threadObject->Set(Nan::New<String>("id").ToLocalChecked(), Nan::New<Number>(thread->id));
     threadObject->Set(Nan::New<String>("emit").ToLocalChecked(), Nan::New<FunctionTemplate>(threadEmit)->GetFunction());
-    Local<Object> dispatchEvents= Nan::CallAsFunction(Script::Compile(Nan::New<String>(kEvents_js).ToLocalChecked())->Run()->ToObject(), threadObject, 0, NULL).ToLocalChecked()->ToObject();
-    Local<Object> dispatchNextTicks= Script::Compile(Nan::New<String>(kThread_nextTick_js).ToLocalChecked())->Run()->ToObject();
+    Local<Object> dispatchEvents= Nan::CallAsFunction(Nan::RunScript(Nan::CompileScript(Nan::New<String>(kEvents_js).ToLocalChecked()).ToLocalChecked()).ToLocalChecked()->ToObject(), threadObject, 0, NULL).ToLocalChecked()->ToObject();
+    Local<Object> dispatchNextTicks= Nan::RunScript(Nan::CompileScript(Nan::New<String>(kThread_nextTick_js).ToLocalChecked()).ToLocalChecked()).ToLocalChecked()->ToObject();
 
     Array* _ntq = Array::Cast(*threadObject->Get(Nan::New<String>("_ntq").ToLocalChecked()));
 
-    Script::Compile(Nan::New<String>(kLoad_js).ToLocalChecked())->Run();
+    Nan::RunScript(Nan::CompileScript(Nan::New<String>(kLoad_js).ToLocalChecked()).ToLocalChecked());
 
     double nextTickQueueLength= 0;
     long int ctr= 0;
@@ -888,7 +888,7 @@ NAN_METHOD(Create) {
     Nan::SetInternalFieldPointer(local_JSObject, 0, thread);
     thread->JSObject.Reset(local_JSObject);
 
-    Local<Value> dispatchEvents= Nan::CallAsFunction(Script::Compile(Nan::New<String>(kEvents_js).ToLocalChecked())->Run()->ToObject(), local_JSObject, 0, NULL).ToLocalChecked();
+    Local<Value> dispatchEvents= Nan::CallAsFunction(Nan::RunScript(Nan::CompileScript(Nan::New<String>(kEvents_js).ToLocalChecked()).ToLocalChecked()).ToLocalChecked()->ToObject(), local_JSObject, 0, NULL).ToLocalChecked();
 	Local<Object> local_dispatchEvents = dispatchEvents->ToObject();
     thread->dispatchEvents.Reset(local_dispatchEvents);
 
@@ -940,9 +940,9 @@ void Init (Handle<Object> target) {
 
   target->Set(Nan::New<String>("create").ToLocalChecked(), Nan::New<FunctionTemplate>(Create)->GetFunction());
   target->Set(Nan::New<String>("createPool").ToLocalChecked(),
-    Script::Compile(Nan::New<String>(kCreatePool_js).ToLocalChecked())->Run()->ToObject());
+    Nan::RunScript(Nan::CompileScript(Nan::New<String>(kCreatePool_js).ToLocalChecked()).ToLocalChecked()).ToLocalChecked()->ToObject());
   target->Set(Nan::New<String>("Worker").ToLocalChecked(),
-    Nan::CallAsFunction(Script::Compile(Nan::New<String>(kWorker_js).ToLocalChecked())->Run()->ToObject(), target, 0, NULL).ToLocalChecked()->ToObject());
+    Nan::CallAsFunction(Nan::RunScript(Nan::CompileScript(Nan::New<String>(kWorker_js).ToLocalChecked()).ToLocalChecked()).ToLocalChecked()->ToObject(), target, 0, NULL).ToLocalChecked()->ToObject());
 
   Local<ObjectTemplate> local_threadTemplate = Nan::New<v8::ObjectTemplate>();
   local_threadTemplate->SetInternalFieldCount(1);

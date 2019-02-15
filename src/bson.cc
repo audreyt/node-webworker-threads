@@ -508,7 +508,7 @@ Local<Value> BSONDeserializer::DeserializeValue(BsonType type, bool promoteLongs
             const Local<Value>& regex = ReadCString();
 			if(regex->IsNull()) ThrowAllocatedStringException(64, "Bad BSON Document: illegal CString");
 			int32_t options = ReadRegexOptions();
-			return RegExp::New(regex->ToString(), (RegExp::Flags) options);
+			return Nan::imp::Factory<v8::RegExp>::New(regex->ToString(), (RegExp::Flags) options).ToLocalChecked();
 		}
 
 	case BSON_TYPE_CODE:

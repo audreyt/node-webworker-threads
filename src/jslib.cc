@@ -38,10 +38,10 @@ static void ReportException(Nan::TryCatch* try_catch) {
 	} else {
 		// Print (filename):(line number): (message).
 		String::Utf8Value filename(message->GetScriptResourceName());
-		int linenum = message->GetLineNumber();
+		int linenum = Nan::GetLineNumber(message).FromMaybe(0);
 		printf("%s:%i: %s\n", *filename, linenum, *exception);
 
-		String::Utf8Value sourceline(message->GetSourceLine());
+		String::Utf8Value sourceline(Nan::GetSourceLine(message).ToLocalChecked());
 		char *tmpbuf = *sourceline;
 		for (int i=0, n=sourceline.length(); i<n; ++i) {
 			if (tmpbuf[i] == '\t') {

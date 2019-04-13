@@ -3,5 +3,6 @@ build
 .DS_Store
 node_modules
 npm-debug.log
+lib/binding
 deps/minifier/bin/minify
 run-all-tests-output.log
